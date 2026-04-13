@@ -12,6 +12,7 @@ require BASE_PATH . "/utils/helper.php";
 session_start();
 
 // dd(ROOT_PATH, BASE_PATH);
+// dd($_SESSION);
 
 $request = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $request = trim($request, '/');

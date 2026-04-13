@@ -33,7 +33,7 @@
   <?php endif; ?>
 
   <?php if (hasPermission('manage_teachers')): ?>
-    <a href="/users">Teachers</a> |
+    <a href="/teachers">Teachers</a> |
   <?php endif; ?>
 
   <?php if (hasPermission('view_audit_logs')): ?>
