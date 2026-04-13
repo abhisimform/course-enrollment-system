@@ -3,21 +3,64 @@
 class StudentModel
 {
   private $pdo;
+  private $table = 'users';
 
   public function __construct()
   {
     $this->pdo = getPDO();
   }
 
+  private function baseCondition()
+  {
+    return "role = 'student' AND deleted_at IS NULL";
+  }
+
+  public function getStudents($search, $page, $perPage, $deleted = false)
+  {
+    $sql = "SELECT * 
+      FROM {$this->table} 
+      WHERE role = 'student'
+    ";
+
+    $sql .= $deleted ? " AND deleted_at IS NOT NULL" : " AND deleted_at IS NULL";
+
+    if ($search) {
+      $sql .= " AND (name LIKE :search OR email LIKE :search)";
+    }
+
+    $sql .= " ORDER BY id DESC LIMIT :offset, :perPage";
+
+    $stmt = $this->pdo->prepare($sql);
+    if ($search) $stmt->bindValue(':search', "%$search%");
+    $stmt->bindValue(':offset', ($page - 1) * $perPage, PDO::PARAM_INT);
+    $stmt->bindValue(':perPage', $perPage, PDO::PARAM_INT);
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
+
+  public function countStudents($search, $deleted = false)
+  {
+    $sql = "SELECT COUNT(*) FROM {$this->table} WHERE role = 'student'";
+    $sql .= $deleted ? " AND deleted_at IS NOT NULL" : " AND deleted_at IS NULL";
+
+    if ($search) $sql .= " AND (name LIKE :search OR email LIKE :search)";
+
+    $stmt = $this->pdo->prepare($sql);
+    if ($search) $stmt->bindValue(':search', "%$search%");
+    $stmt->execute();
+
+    return $stmt->fetchColumn();
+  }
+
   public function getAll()
   {
     $stmt = $this->pdo->prepare("
-            SELECT * 
-            FROM students 
-            WHERE deleted_at IS NULL 
-            ORDER BY id DESC
-        ");
-
+      SELECT * 
+      FROM {$this->table} 
+      WHERE {$this->baseCondition()}
+      ORDER BY id DESC
+    ");
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
@@ -25,13 +68,12 @@ class StudentModel
   public function find($id)
   {
     $stmt = $this->pdo->prepare("
-            SELECT * 
-            FROM students 
-            WHERE id = :id 
-            AND deleted_at IS NULL
-            LIMIT 1
-        ");
-
+      SELECT * 
+      FROM {$this->table} 
+      WHERE id = :id 
+      AND {$this->baseCondition()}
+      LIMIT 1
+    ");
     $stmt->execute(['id' => $id]);
     return $stmt->fetch(PDO::FETCH_ASSOC);
   }
@@ -39,70 +81,82 @@ class StudentModel
   public function create($data)
   {
     $stmt = $this->pdo->prepare("
-            INSERT INTO students (name, email, phone, enrolled_on)
-            VALUES (:name, :email, :phone, :enrolled_on)
-        ");
-
+      INSERT INTO {$this->table} (name, email, password, role)
+      VALUES (:name, :email, :password, 'student')
+    ");
     return $stmt->execute([
-      'name'         => $data['name'],
-      'email'        => $data['email'],
-      'phone'        => $data['phone'],
-      'enrolled_on'  => date('Y-m-d')
+      'name' => $data['name'],
+      'email' => $data['email'],
+      'password' => password_hash($data['password'], PASSWORD_BCRYPT)
     ]);
   }
 
   public function update($id, $data)
   {
-    $stmt = $this->pdo->prepare("
-            UPDATE students 
-            SET name = :name,
-                email = :email,
-                phone = :phone,
-                updated_at = NOW()
-            WHERE id = :id
-            AND deleted_at IS NULL
+    if (!empty($data['password'])) {
+      $stmt = $this->pdo->prepare("
+          UPDATE {$this->table} 
+          SET name = :name,
+            email = :email,
+            password = :password,
+            updated_at = NOW()
+          WHERE id = :id
+          AND {$this->baseCondition()}
         ");
-
-    return $stmt->execute([
-      'id'    => $id,
-      'name'  => $data['name'],
-      'email' => $data['email'],
-      'phone' => $data['phone']
-    ]);
+      return $stmt->execute([
+        'id' => $id,
+        'name' => $data['name'],
+        'email' => $data['email'],
+        'password' => password_hash($data['password'], PASSWORD_BCRYPT)
+      ]);
+    } else {
+      $stmt = $this->pdo->prepare("
+        UPDATE {$this->table} 
+        SET name = :name,
+          email = :email,
+          updated_at = NOW()
+        WHERE id = :id
+        AND {$this->baseCondition()}
+      ");
+      return $stmt->execute([
+        'id' => $id,
+        'name' => $data['name'],
+        'email' => $data['email']
+      ]);
+    }
   }
 
   public function softDelete($id)
   {
     $stmt = $this->pdo->prepare("
-            UPDATE students 
-            SET deleted_at = NOW()
-            WHERE id = :id
-        ");
-
+      UPDATE {$this->table} 
+      SET deleted_at = NOW()
+      WHERE id = :id
+      AND role = 'student'
+    ");
     return $stmt->execute(['id' => $id]);
   }
 
   public function restore($id)
   {
     $stmt = $this->pdo->prepare("
-            UPDATE students 
-            SET deleted_at = NULL
-            WHERE id = :id
-        ");
-
+      UPDATE {$this->table} 
+      SET deleted_at = NULL
+      WHERE id = :id
+      AND role = 'student'
+    ");
     return $stmt->execute(['id' => $id]);
   }
 
   public function emailExists($email)
   {
     $stmt = $this->pdo->prepare("
-            SELECT id 
-            FROM students 
-            WHERE email = :email 
-            AND deleted_at IS NULL
-            LIMIT 1
-        ");
-
+      SELECT id 
+      FROM {$this->table} 
+      WHERE email = :email 
+      AND {$this->baseCondition()}
+      LIMIT 1
+    ");
     $stmt->execute(['email' => $email]);
     return $stmt->fetch(PDO::FETCH_ASSOC) ? true : false;
   }
@@ -110,10 +164,24 @@ class StudentModel
   public function count()
   {
     $stmt = $this->pdo->query("
-        SELECT COUNT(*) as total 
-        FROM students 
-        WHERE deleted_at IS NULL
+      SELECT COUNT(*) as total 
+      FROM {$this->table} 
+      WHERE {$this->baseCondition()}
     ");
     return $stmt->fetch()['total'];
+  }
+
+  public function getEnrolledCourses($studentId)
+  {
+    $stmt = $this->pdo->prepare("
+      SELECT c.* 
+      FROM courses c
+      JOIN enrollments e ON e.course_id = c.id
+      WHERE e.student_id = :student_id
+      AND e.status = 'active'
+      AND c.deleted_at IS NULL
+    ");
+    $stmt->execute(['student_id' => $studentId]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
 }
