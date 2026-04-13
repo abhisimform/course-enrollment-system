@@ -32,6 +32,68 @@ class AuditModel
     return $stmt->fetchAll();
   }
 
+  public function getRecords($search = "", $orderBy = "changed_at", $sortOrder = "DESC", $page = 1, $limit = 10)
+  {
+    $offset = ($page - 1) * $limit;
+
+    $searchCondition = "";
+    if (!empty($search)) {
+      $searchCondition = "WHERE table_name LIKE :search_table 
+                          OR old_data LIKE :search_old_data 
+                          OR new_data LIKE :search_new_data 
+                          OR action_type LIKE :search_action_type 
+                          OR record_id LIKE :search_record_id";
+    }
+
+    $sql = "
+      SELECT * 
+      FROM audit_logs
+      $searchCondition
+      ORDER BY $orderBy $sortOrder
+      LIMIT :limit OFFSET :offset
+    ";
+
+    $stmt = $this->pdo->prepare($sql);
+
+    if (!empty($search)) {
+      $stmt->bindValue(":search_table", "%$search%", PDO::PARAM_STR);
+      $stmt->bindValue(":search_old_data", "%$search%", PDO::PARAM_STR);
+      $stmt->bindValue(":search_new_data", "%$search%", PDO::PARAM_STR);
+      $stmt->bindValue(":search_action_type", "%$search%", PDO::PARAM_STR);
+      $stmt->bindValue(":search_record_id", "%$search%", PDO::PARAM_STR);
+    }
+
+    $stmt->bindValue(":limit", $limit, PDO::PARAM_INT);
+    $stmt->bindValue(":offset", $offset, PDO::PARAM_INT);
+
+    $stmt->execute();
+
+    return $stmt->fetchAll();
+  }
+
+  public function getTotalCount($search = "")
+  {
+    $searchCondition = "";
+    if (!empty($search)) {
+      $searchCondition = "WHERE table_name LIKE :search_table 
+                          OR action_type LIKE :search_action_type 
+                          OR record_id LIKE :search_record_id";
+    }
+
+    $sql = "SELECT COUNT(*) FROM audit_logs $searchCondition";
+
+    $stmt = $this->pdo->prepare($sql);
+
+    if (!empty($search)) {
+      $stmt->bindValue(":search_table", "%$search%", PDO::PARAM_STR);
+      $stmt->bindValue(":search_action_type", "%$search%", PDO::PARAM_STR);
+      $stmt->bindValue(":search_record_id", "%$search%", PDO::PARAM_STR);
+    }
+
+    $stmt->execute();
+    return $stmt->fetchColumn();
+  }
+
   public function getAllTables()
   {
     $sql = "SHOW TABLES";
