@@ -9,9 +9,12 @@ define('BASE_PATH', __DIR__ . "/..");
 require BASE_PATH . "/config/database.php";
 require BASE_PATH . "/utils/helper.php";
 
+session_start();
+
 // dd(ROOT_PATH, BASE_PATH);
 
-$request = trim($_SERVER['REQUEST_URI'], '/');
+$request = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$request = trim($request, '/');
 $parts = $request ? explode('/', $request) : [];
 
 // dd($request, $parts);
@@ -26,6 +29,8 @@ URL structure:
 $module = $parts[0] ?? 'auth';
 $action = $parts[1] ?? 'index';
 $id     = $parts[2] ?? null;
+
+// dd($module, $action, $id);
 
 $file = "../app/controllers/{$module}.php";
 
@@ -42,6 +47,8 @@ if (!class_exists($class)) {
 }
 
 $controller = new $class();
+
+// dd($controller,isLoggedIn(), requireLogin());
 
 /*
 Call method dynamically

@@ -75,12 +75,15 @@ function redirect($path)
 
 function isLoggedIn()
 {
+  // dd(3, $_SESSION, isset($_SESSION['user']));
   return isset($_SESSION['user']);
 }
 
 function requireLogin()
 {
+  // dd(2);
   if (!isLoggedIn()) {
+    // dd(1);
     header("Location: /auth/login");
     exit;
   }
