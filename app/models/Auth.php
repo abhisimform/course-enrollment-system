@@ -3,19 +3,25 @@
 class AuthModel
 {
   private $pdo;
+  private $table = 'users';
 
   public function __construct()
   {
     $this->pdo = getPDO();
   }
 
+  private function baseCondition()
+  {
+    return "deleted_at IS NULL";
+  }
+
   public function login($email, $password)
   {
     $stmt = $this->pdo->prepare("
             SELECT * 
-            FROM users 
+            FROM {$this->table} 
             WHERE email = :email 
-            AND deleted_at IS NULL
+            AND {$this->baseCondition()}
             LIMIT 1
         ");
 
@@ -37,9 +43,9 @@ class AuthModel
   {
     $stmt = $this->pdo->prepare("
             SELECT id, name, email, role
-            FROM users
+            FROM {$this->table}
             WHERE id = :id
-            AND deleted_at IS NULL
+            AND {$this->baseCondition()}
             LIMIT 1
         ");
 
@@ -50,7 +56,7 @@ class AuthModel
   public function register($data)
   {
     $stmt = $this->pdo->prepare("
-            INSERT INTO users (name, email, password, role)
+            INSERT INTO {$this->table} (name, email, password, role)
             VALUES (:name, :email, :password, :role)
         ");
 
@@ -64,16 +70,13 @@ class AuthModel
 
   public function getPermissions($userId)
   {
-    $stmt = $this->pdo->prepare("
-        SELECT p.name
-        FROM permissions p
-        LEFT JOIN role_permissions rp ON rp.permission_id = p.id
-        JOIN users u ON u.role = rp.role
-        WHERE u.id = :user_id
-    ");
-
+    $sql = "SELECT p.name
+            FROM permissions p
+            LEFT JOIN role_permissions rp ON rp.permission_id = p.id
+            JOIN {$this->table} u ON u.role = rp.role
+            WHERE u.id = :user_id";
+    $stmt = $this->pdo->prepare($sql);
     $stmt->execute(['user_id' => $userId]);
-
     return array_column($stmt->fetchAll(), 'name');
   }
 }

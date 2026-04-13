@@ -9,8 +9,6 @@ class Auth
     require_once BASE_PATH . '/app/models/Auth.php';
     require_once BASE_PATH . '/utils/helper.php';
 
-    session_start();
-
     $this->authModel = new AuthModel();
   }
 

@@ -20,7 +20,7 @@ function dd(...$vars)
         font-weight: bold;
       }
       .dd-content {
-        display: none;
+        /* display: none; */
         padding: 10px;
         border-top: 1px solid #ddd;
         background: #fff;
