@@ -36,7 +36,7 @@ class Teachers
 
   public function restore($id)
   {
-    if (!hasPermission('restore_teacher')) die("Access denied");
+    if (Rbac::has('restore_teacher')) die("Access denied");
     $this->teacherModel->restore($id);
     setFlash('success', 'Teacher restored');
     header("Location: /teachers?deleted=1");
@@ -45,7 +45,7 @@ class Teachers
 
   public function create()
   {
-    if (!hasPermission('create_teacher')) {
+    if (Rbac::has('create_teacher')) {
       die("Access denied");
     }
 
@@ -102,7 +102,7 @@ class Teachers
 
   public function edit($id)
   {
-    if (!hasPermission('edit_teacher')) {
+    if (Rbac::has('edit_teacher')) {
       die("Access denied");
     }
 
@@ -151,7 +151,7 @@ class Teachers
 
   public function delete($id)
   {
-    if (!hasPermission('delete_teacher')) {
+    if (Rbac::has('delete_teacher')) {
       die("Access denied");
     }
 

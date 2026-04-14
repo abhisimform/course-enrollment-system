@@ -11,10 +11,8 @@ class Audit
 
     requireLogin();
 
-    if (!hasPermission('view_audit_logs')) {
-      die("Access denied");
-    }
-
+    Rbac::has('audit.view');
+    
     $this->auditModel = new AuditModel();
   }
 

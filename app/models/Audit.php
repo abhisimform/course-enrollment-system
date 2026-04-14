@@ -3,6 +3,7 @@
 class AuditModel
 {
   private $pdo;
+  private $table = 'audit_logs';
 
   public function __construct()
   {
@@ -11,7 +12,7 @@ class AuditModel
 
   public function getAll($table = null, $action = null)
   {
-    $sql = "SELECT * FROM audit_logs WHERE 1=1";
+    $sql = "SELECT * FROM {$this->table} WHERE 1=1";
     $params = [];
 
     if (!empty($table)) {
@@ -47,7 +48,7 @@ class AuditModel
 
     $sql = "
       SELECT * 
-      FROM audit_logs
+      FROM {$this->table}
       $searchCondition
       ORDER BY $orderBy $sortOrder
       LIMIT :limit OFFSET :offset
@@ -80,7 +81,7 @@ class AuditModel
                           OR record_id LIKE :search_record_id";
     }
 
-    $sql = "SELECT COUNT(*) FROM audit_logs $searchCondition";
+    $sql = "SELECT COUNT(*) FROM {$this->table} $searchCondition";
 
     $stmt = $this->pdo->prepare($sql);
 

@@ -5,6 +5,28 @@
 
 <head>
   <title>Admin Panel</title>
+  <style>
+    body {
+      font-family: Arial;
+    }
+
+    a {
+      margin-right: 10px;
+      text-decoration: none;
+    }
+
+    .nav {
+      padding: 10px;
+      background: #f4f4f4;
+      margin-bottom: 10px;
+    }
+
+    .flash {
+      padding: 10px;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 
 <body>
@@ -17,41 +39,50 @@
 
   <hr>
 
-  <!-- NAVIGATION -->
-  <a href="/dashboard">Dashboard</a> |
+  <div class="nav">
 
-  <?php if (hasPermission('create_student')): ?>
-    <a href="/students">Students</a> |
-  <?php endif; ?>
+    <?php if (hasPermission('dashboard.view')): ?>
+      <a href="/dashboard">Dashboard</a>
+    <?php endif; ?>
 
-  <?php if (hasPermission('create_course')): ?>
-    <a href="/courses">Courses</a> |
-  <?php endif; ?>
+    <?php if (hasPermission('student.view')): ?>
+      <a href="/students">Students</a>
+    <?php endif; ?>
 
-  <?php if (hasPermission('enroll_student')): ?>
-    <a href="/enrollments">Enrollments</a> |
-  <?php endif; ?>
+    <?php if (hasPermission('course.view')): ?>
+      <a href="/courses">Courses</a>
+    <?php endif; ?>
 
-  <?php if (hasPermission('manage_teachers')): ?>
-    <a href="/teachers">Teachers</a> |
-  <?php endif; ?>
+    <?php if (hasPermission('enrollment.view')): ?>
+      <a href="/enrollments">Enrollments</a>
+    <?php endif; ?>
 
-  <?php if (hasPermission('view_audit_logs')): ?>
-    <a href="/audit">Audit Logs</a> |
-  <?php endif; ?>
+    <?php if (hasPermission('teacher.view')): ?>
+      <a href="/teachers">Teachers</a>
+    <?php endif; ?>
 
-  <a href="/auth/logout">Logout</a>
+    <?php if (hasPermission('permission.assign')): ?>
+      <a href="/permissions">Permissions</a>
+      <a href="/permissions/roles">Role Permissions</a>
+      <a href="/permissions/users">User Permissions</a>
+    <?php endif; ?>
+
+    <?php if (hasPermission('audit.view')): ?>
+      <a href="/audit">Audit Logs</a>
+    <?php endif; ?>
+
+    <a href="/auth/logout">Logout</a>
+
+  </div>
 
   <hr>
 
-  <!-- FLASH -->
   <?php if ($flash = getFlash()): ?>
-    <div style="color:white; background:<?= $flash['type'] == 'success' ? 'green' : 'red' ?>; padding:10px;">
+    <div class="flash" style="background: <?= $flash['type'] == 'success' ? 'green' : 'red' ?>;">
       <?= $flash['message'] ?>
     </div>
   <?php endif; ?>
 
-  <!-- PAGE CONTENT -->
   <?php require $view; ?>
 
 </body>

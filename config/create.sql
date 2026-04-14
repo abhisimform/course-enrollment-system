@@ -99,7 +99,7 @@ CREATE TABLE permissions (
 -- =========================================
 CREATE TABLE role_permissions (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    role ENUM('admin','teacher') NOT NULL,
+    role ENUM('admin','teacher', 'student') NOT NULL,
     permission_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY unique_role_permission(role, permission_id),

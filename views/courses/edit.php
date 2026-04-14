@@ -1,9 +1,3 @@
-<?php
-if (session_status() === PHP_SESSION_NONE) {
-  session_start();
-}
-?>
-
 <h2>Edit Course</h2>
 
 <?php if ($msg = getFlash('error')): ?>

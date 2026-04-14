@@ -71,12 +71,16 @@ class AuthModel
   public function getPermissions($userId)
   {
     $sql = "SELECT p.name
-            FROM permissions p
-            LEFT JOIN role_permissions rp ON rp.permission_id = p.id
-            JOIN {$this->table} u ON u.role = rp.role
-            WHERE u.id = :user_id";
+      FROM permissions p
+      LEFT JOIN role_permissions rp ON rp.permission_id = p.id
+      LEFT JOIN user_permissions up ON up.user = u.id
+      JOIN {$this->table} u ON u.role = rp.role
+      WHERE u.id = :user_id
+    ";
+    
     $stmt = $this->pdo->prepare($sql);
     $stmt->execute(['user_id' => $userId]);
+
     return array_column($stmt->fetchAll(), 'name');
   }
 }

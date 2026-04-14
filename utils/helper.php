@@ -76,7 +76,7 @@ function redirect($path)
 function isLoggedIn()
 {
   // dd(3, $_SESSION, isset($_SESSION['user']));
-  return isset($_SESSION['user']);
+  return !empty($_SESSION['user']);
 }
 
 function requireLogin()
@@ -85,6 +85,14 @@ function requireLogin()
   if (!isLoggedIn()) {
     // dd(1);
     header("Location: /auth/login");
+    exit;
+  }
+}
+
+function redirectIfLoggedIn()
+{
+  if (isLoggedIn()) {
+    header("Location: /dashboard");
     exit;
   }
 }
@@ -116,14 +124,10 @@ function getFlash()
 
 function hasPermission($permission)
 {
-  if (!isset($_SESSION['user'])) return false;
+  return Rbac::has($permission);
+}
 
-  // Admin allow for all
-  if ($_SESSION['user']['role'] === 'admin') {
-    return true;
-  }
-
-  $userPermissions = $_SESSION['permissions'] ?? [];
-
-  return in_array($permission, $userPermissions);
+function requirePermission($permission)
+{
+  return Rbac::require($permission);
 }

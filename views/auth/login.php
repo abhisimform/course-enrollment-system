@@ -1,9 +1,3 @@
-<?php
-if (session_status() === PHP_SESSION_NONE) {
-  session_start();
-}
-?>
-
 <h2>Login</h2>
 
 <?php if ($msg = getFlash('error')): ?>

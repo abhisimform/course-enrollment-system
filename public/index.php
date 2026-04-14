@@ -8,6 +8,7 @@ define('BASE_PATH', __DIR__ . "/..");
 
 require BASE_PATH . "/config/database.php";
 require BASE_PATH . "/utils/helper.php";
+require BASE_PATH . "/app/services/Rbac.php";
 
 session_start();
 
@@ -37,6 +38,12 @@ $file = "../app/controllers/{$module}.php";
 
 if (!file_exists($file)) {
   die("Module not found");
+}
+
+$publicRoutes = ['auth'];
+
+if (!in_array($module, $publicRoutes)) {
+  requireLogin();
 }
 
 require $file;

@@ -17,34 +17,42 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- =========================================
 -- PERMISSIONS
 -- =========================================
-INSERT INTO permissions (name) VALUES
+INSERT INTO permissions (name, created_at) VALUES
+
 -- STUDENT
-('create_student'),
-('view_student'),
-('edit_student'),
-('delete_student'),
-('edit_own_profile'),
+('student.view', NOW()),
+('student.create', NOW()),
+('student.edit', NOW()),
+('student.delete', NOW()),
+('student.restore', NOW()),
+
 -- COURSE
-('create_course'),
-('view_course'),
-('edit_course'),
-('delete_course'),
-('view_course_students'),
+('course.view', NOW()),
+('course.create', NOW()),
+('course.edit', NOW()),
+('course.delete', NOW()),
+('course.restore', NOW()),
+('course.view_students', NOW()),
+
+-- TEACHER
+('teacher.view', NOW()),
+('teacher.create', NOW()),
+('teacher.edit', NOW()),
+('teacher.delete', NOW()),
+('teacher.restore', NOW()),
+
 -- ENROLLMENT
-('enroll_student'),
-('view_enrollment'),
-('cancel_enrollment'),
--- TEACHERS / USERS
-('create_teacher'),
-('view_teacher'),
-('edit_teacher'),
-('delete_teacher'),
-('view_all_users'),
--- SYSTEM
-('manage_roles'),
-('assign_permissions'),
-('view_audit_logs'),
-('manage_audit_logs');
+('enrollment.view', NOW()),
+('enrollment.create', NOW()),
+('enrollment.cancel', NOW()),
+('enrollment.view_single', NOW()),
+
+-- SYSTEM / ADMIN
+('permission.assign', NOW()),
+('role.manage', NOW()),
+('audit.view', NOW()),
+('audit.manage', NOW()),
+('user.view_all', NOW());
 
 -- =========================================
 -- USERS (Admin, Teachers, Students)

@@ -447,4 +447,12 @@ BEGIN
     ));
 END$$
 
+CREATE TRIGGER prevent_users_delete
+BEFORE DELETE ON users
+FOR EACH ROW
+BEGIN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Hard delete not allowed. Use soft delete.';
+END$$
+
 DELIMITER ;

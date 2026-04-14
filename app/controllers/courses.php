@@ -14,38 +14,32 @@ class Courses
     $this->courseModel = new CourseModel();
   }
 
-  // Updated index() method with search, filter, and pagination
   public function index()
   {
-    // Get current page, search, and filter params from the query string
-    $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-    $perPage = 10; // Number of courses per page
+    Rbac::require('course.view');
 
-    // Get search, filter params from query
+    $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $perPage = 10;
+
     $search = isset($_GET['search']) ? $_GET['search'] : '';
     $status = isset($_GET['status']) ? $_GET['status'] : '';
     $instructorId = isset($_GET['instructor']) ? $_GET['instructor'] : '';
 
-    // Call the model method to fetch filtered and paginated courses
     $courses = $this->courseModel->getCourses($search, $status, $instructorId, $currentPage, $perPage);
 
-    // Get total courses count for pagination
     $totalCourses = $this->courseModel->countCourses($search, $status, $instructorId);
     $totalPages = ceil($totalCourses / $perPage);
 
-    // Get list of instructors for filtering (assuming you have this in your model)
     $instructors = $this->courseModel->getInstructors();
 
-    // Prepare the view
     $view = BASE_PATH . "/views/courses/index.php";
     require BASE_PATH . "/views/layouts/main.php";
   }
 
   public function create()
   {
-    if (!hasPermission('create_course')) {
-      die("Access denied");
-    }
+    Rbac::require('course.create');
+    
     $errors = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -106,9 +100,7 @@ class Courses
 
   public function edit($id)
   {
-    if (!hasPermission('edit_course')) {
-      die("Access denied");
-    }
+    Rbac::require('course.edit');
 
     $course = $this->courseModel->find($id);
     if (!$course) die("Course not found");
@@ -163,9 +155,7 @@ class Courses
 
   public function delete($id)
   {
-    if (!hasPermission('delete_course')) {
-      die("Access denied");
-    }
+    Rbac::require('course.delete');
 
     $this->courseModel->softDelete($id);
 
