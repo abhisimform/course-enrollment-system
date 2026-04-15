@@ -2,7 +2,7 @@
 
 require_once BASE_PATH . '/app/models/Audit.php';
 
-class Audit
+class Audit extends BaseController
 {
   private $auditModel;
 
@@ -35,7 +35,6 @@ class Audit
     $totalRecords = $this->auditModel->getTotalCount($search);
     $totalPages = ceil($totalRecords / $limit);
 
-    $view = BASE_PATH . '/views/audit/index.php';
-    require BASE_PATH . '/views/layouts/main.php';
+    $this->render("/audit/index", compact('search', 'page', 'limit', 'orderBy', 'sortOrder', 'logs', 'totalPages', 'totalRecords'));
   }
 }

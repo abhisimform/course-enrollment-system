@@ -67,12 +67,6 @@ function sanitize($data)
   return htmlspecialchars(trim((string)$data), ENT_QUOTES, 'UTF-8');
 }
 
-function redirect($path)
-{
-  header("Location: $path");
-  exit;
-}
-
 function isLoggedIn()
 {
   // dd(3, $_SESSION, isset($_SESSION['user']));

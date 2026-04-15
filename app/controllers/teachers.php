@@ -2,47 +2,54 @@
 
 require_once BASE_PATH . "/app/models/Teacher.php";
 
-class Teachers
+class Teachers extends BaseController
 {
   private $teacherModel;
 
   public function __construct()
   {
     requireLogin();
-
     $this->teacherModel = new TeacherModel();
   }
 
   public function index()
   {
-
-    $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $currentPage = (int)($_GET['page'] ?? 1);
     $perPage = 10;
 
     $search = $_GET['search'] ?? '';
-
-    $showDeleted = isset($_GET['deleted']) ? true : false;
+    $showDeleted = isset($_GET['deleted']);
 
     $teachers = $this->teacherModel->getTeachers($search, $currentPage, $perPage, $showDeleted);
     $totalTeachers = $this->teacherModel->countTeachers($search, $showDeleted);
     $totalPages = ceil($totalTeachers / $perPage);
 
-    $view = BASE_PATH . "/views/teachers/index.php";
-    require BASE_PATH . "/views/layouts/main.php";
+    return $this->render('teachers/index', compact(
+      'teachers',
+      'currentPage',
+      'perPage',
+      'search',
+      'showDeleted',
+      'totalTeachers',
+      'totalPages'
+    ));
   }
 
   public function restore($id)
   {
-    if (Rbac::has('restore_teacher')) die("Access denied");
+    if (!Rbac::has('restore_teacher')) {
+      die("Access denied");
+    }
+
     $this->teacherModel->restore($id);
     setFlash('success', 'Teacher restored');
-    header("Location: /teachers?deleted=1");
-    exit;
+
+    return $this->redirect("/teachers?deleted=1");
   }
 
   public function create()
   {
-    if (Rbac::has('create_teacher')) {
+    if (!Rbac::has('create_teacher')) {
       die("Access denied");
     }
 
@@ -54,22 +61,26 @@ class Teachers
       $email = trim($_POST['email'] ?? '');
       $password = $_POST['password'] ?? '';
 
-      if ($name === '')
+      if ($name === '') {
         $errors['name'] = 'Name is required';
+      }
 
-      if ($email === '')
+      if ($email === '') {
         $errors['email'] = 'Email is required';
-      elseif (!filter_var($email, FILTER_VALIDATE_EMAIL))
-        $errors['email'] = 'Invalid email formate';
-      elseif ($this->teacherModel->emailExists($email))
+      } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors['email'] = 'Invalid email format';
+      } elseif ($this->teacherModel->emailExists($email)) {
         $errors['email'] = 'Email already in use';
+      }
 
-      if ($password === '')
+      if ($password === '') {
         $errors['password'] = 'Password is required';
-      elseif (strlen($password) < 6)
+      } elseif (strlen($password) < 6) {
         $errors['password'] = 'Password must be at least 6 characters';
+      }
 
       if (empty($errors)) {
+
         $this->teacherModel->create([
           'name' => $name,
           'email' => $email,
@@ -77,13 +88,12 @@ class Teachers
         ]);
 
         setFlash('success', 'Teacher created');
-        header("Location: /teachers");
-        exit;
+
+        return $this->redirect("/teachers");
       }
     }
 
-    $view = BASE_PATH . "/views/teachers/create.php";
-    require BASE_PATH . "/views/layouts/main.php";
+    return $this->render('teachers/create', compact('errors'));
   }
 
   public function view($id)
@@ -94,17 +104,20 @@ class Teachers
       die("Teacher not found");
     }
 
-    require BASE_PATH . "/views/teachers/view.php";
+    return $this->render('teachers/view', compact('teacher'));
   }
 
   public function edit($id)
   {
-    if (Rbac::has('edit_teacher')) {
+    if (!Rbac::has('edit_teacher')) {
       die("Access denied");
     }
 
     $teacher = $this->teacherModel->find($id);
-    if (!$teacher) die("Teacher not found");
+
+    if (!$teacher) {
+      die("Teacher not found");
+    }
 
     $errors = [];
 
@@ -114,14 +127,18 @@ class Teachers
       $email = trim($_POST['email'] ?? '');
       $password = $_POST['password'] ?? '';
 
-      if ($name === '')
+      if ($name === '') {
         $errors['name'] = 'Name is required';
+      }
 
-      if ($email === '')
+      if ($email === '') {
         $errors['email'] = 'Email is required';
-      elseif (!filter_var($email, FILTER_VALIDATE_EMAIL))
-        $errors['email'] = 'Invalid email formate';
-      elseif ($email !== $teacher['email'] && $this->teacherModel->emailExists($email)) {
+      } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors['email'] = 'Invalid email format';
+      } elseif (
+        $email !== $teacher['email'] &&
+        $this->teacherModel->emailExists($email)
+      ) {
         $errors['email'] = 'Email already in use';
       }
 
@@ -130,6 +147,7 @@ class Teachers
       }
 
       if (empty($errors)) {
+
         $this->teacherModel->update($id, [
           'name' => $name,
           'email' => $email,
@@ -137,25 +155,24 @@ class Teachers
         ]);
 
         setFlash('success', 'Teacher updated');
-        header("Location: /teachers/view/$id");
-        exit;
+
+        return $this->redirect("/teachers/view/$id");
       }
     }
 
-    $view = BASE_PATH . "/views/teachers/edit.php";
-    require BASE_PATH . "/views/layouts/main.php";
+    return $this->render('teachers/edit', compact('teacher', 'errors'));
   }
 
   public function delete($id)
   {
-    if (Rbac::has('delete_teacher')) {
+    if (!Rbac::has('delete_teacher')) {
       die("Access denied");
     }
 
     $this->teacherModel->softDelete($id);
 
     setFlash('success', 'Teacher deleted');
-    header("Location: /teachers");
-    exit;
+
+    return $this->redirect("/teachers");
   }
 }

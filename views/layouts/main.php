@@ -5,28 +5,7 @@
 
 <head>
   <title>Admin Panel</title>
-  <style>
-    body {
-      font-family: Arial;
-    }
-
-    a {
-      margin-right: 10px;
-      text-decoration: none;
-    }
-
-    .nav {
-      padding: 10px;
-      background: #f4f4f4;
-      margin-bottom: 10px;
-    }
-
-    .flash {
-      padding: 10px;
-      color: #fff;
-      margin-bottom: 10px;
-    }
-  </style>
+  <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 
 <body>
@@ -85,6 +64,7 @@
 
   <?php require $view; ?>
 
+  <script src="../assets/js/app.js"></script>
 </body>
 
 </html>

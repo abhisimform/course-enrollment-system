@@ -1,0 +1,29 @@
+<?php
+
+class BaseController
+{
+
+  protected $layout = 'main';
+
+  protected function render($viewPath, $data = [])
+  {
+    extract($data);
+    // dd($data);
+
+    $view = BASE_PATH . "/views/" . $viewPath . ".php";
+
+    if (!file_exists($view)) {
+      die("View not found: " . $viewPath);
+    }
+
+    $layoutPath = BASE_PATH . "/views/layouts/{$this->layout}.php";
+
+    require $layoutPath;
+  }
+
+  protected function redirect($url)
+  {
+    header("Location: $url");
+    exit;
+  }
+}

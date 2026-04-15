@@ -3,10 +3,12 @@
 require_once BASE_PATH . '/app/models/Auth.php';
 require_once BASE_PATH . '/app/models/Permission.php';
 
-class Auth
+class Auth extends BaseController
 {
   private $authModel;
   private $permissionModel;
+
+  protected $layout = 'public';
 
   public function __construct()
   {
@@ -14,52 +16,82 @@ class Auth
     $this->authModel = new AuthModel();
   }
 
+  private function ensureCsrf()
+  {
+    if (empty($_SESSION['csrf_token'])) {
+      $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+  }
+
+  private function validateCsrf()
+  {
+    if (
+      !isset($_POST['csrf_token']) ||
+      !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])
+    ) {
+      die("Invalid CSRF token");
+    }
+  }
+
   public function login()
   {
     redirectIfLoggedIn();
 
-    if (empty($_SESSION['csrf_token'])) {
-      $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
+    $this->ensureCsrf();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-      if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        die("Invalid CSRF token");
-      }
+      $this->validateCsrf();
 
-      ['email' => $email, 'password' => $password] = $_POST;
+      $email = trim($_POST['email'] ?? '');
+      $password = $_POST['password'] ?? '';
 
       $user = $this->authModel->login($email, $password);
 
       if (!$user) {
         setFlash('error', 'Invalid email or password');
-        require BASE_PATH . '/views/auth/login.php';
-        return;
+        return $this->render('auth/login', [], 'public');
       }
 
       session_regenerate_id(true);
 
       $_SESSION['user'] = [
-        'id'    => $user['id'],
-        'name'  => $user['name'],
-        'role'  => $user['role']
+        'id'   => $user['id'],
+        'name' => $user['name'],
+        'role' => $user['role']
       ];
 
-      $_SESSION['permissions'] = $this->permissionModel->getUserPermissions($user['id']);
+      $_SESSION['permissions'] =
+        $this->permissionModel->getUserPermissions($user['id']);
 
       setFlash('success', 'Login successful!');
 
-      if ($user['role'] === 'admin') {
-        header("Location: /dashboard");
-      } else {
-        header("Location: /students");
-      }
-
-      exit;
+      return $this->redirect(
+        $user['role'] === 'admin' ? '/dashboard' : '/students'
+      );
     }
 
-    require BASE_PATH . '/views/auth/login.php';
+    return $this->render('auth/login', [], 'public');
+  }
+
+  public function register()
+  {
+    redirectIfLoggedIn();
+
+    $this->ensureCsrf();
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+      $this->validateCsrf();
+
+      $this->authModel->register($_POST);
+
+      setFlash('success', 'Registered successfully! Please login.');
+
+      return $this->redirect("/auth/login");
+    }
+
+    return $this->render('auth/register', [], 'public');
   }
 
   public function logout()
@@ -69,31 +101,6 @@ class Auth
     $_SESSION = [];
     session_destroy();
 
-    header("Location: /auth/login");
-    exit;
-  }
-
-  public function register()
-  {
-    redirectIfLoggedIn();
-
-    if (empty($_SESSION['csrf_token'])) {
-      $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
-
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-      if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        die("Invalid CSRF token");
-      }
-
-      $this->authModel->register($_POST);
-
-      setFlash('success', 'Registered successfully! Please login.');
-      header("Location: /auth/login");
-      exit;
-    }
-
-    require BASE_PATH . '/views/auth/register.php';
+    return $this->redirect("/auth/login");
   }
 }

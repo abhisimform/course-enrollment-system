@@ -8,6 +8,7 @@ define('BASE_PATH', __DIR__ . "/..");
 
 require BASE_PATH . "/config/database.php";
 require BASE_PATH . "/utils/helper.php";
+require BASE_PATH . "/app/controllers/base.php";
 require BASE_PATH . "/app/services/Rbac.php";
 
 session_start();

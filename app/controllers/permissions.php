@@ -3,7 +3,7 @@
 require_once BASE_PATH . '/app/models/User.php';
 require_once BASE_PATH . '/app/models/Permission.php';
 
-class Permissions
+class Permissions extends BaseController
 {
   private $permissionModel;
   private $userModel; // for assigning permissions to users
@@ -22,19 +22,24 @@ class Permissions
     $perPage = 5;
     $offset = ($page - 1) * $perPage;
 
+    $q = $_GET['q'] ?? '';
+
     $permissions = $this->permissionModel->getPaginated($perPage, $offset, $_GET['q'] ?? '');
     $total = $this->permissionModel->countFiltered($_GET['q'] ?? '');
-    $totalPages = ceil($total / $perPage);
 
-    $view = BASE_PATH . "/views/permissions/index.php";
-    require BASE_PATH . "/views/layouts/main.php";
+    $this->render('permissions/index', [
+      'permissions' => $permissions,
+      'totalPages' => ceil($total / $perPage),
+      'page' => $page,
+      'q' => $q
+    ]);
   }
 
   public function view($id)
   {
     $permission = $this->permissionModel->getById($id);
-    $view = BASE_PATH . "/views/permissions/view.php";
-    require BASE_PATH . "/views/layouts/main.php";
+
+    $this->render('permissions/view', compact('permission'));
   }
 
   public function create()
@@ -42,12 +47,11 @@ class Permissions
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $name = trim($_POST['name']);
       $this->permissionModel->create($name);
-      header('Location: /permissions');
-      exit;
+
+      return $this->redirect('/permissions');
     }
 
-    $view = BASE_PATH . "/views/permissions/create.php";
-    require BASE_PATH . "/views/layouts/main.php";
+    $this->render('permissions/create');
   }
 
   public function edit($id)
@@ -57,26 +61,25 @@ class Permissions
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $name = trim($_POST['name']);
       $this->permissionModel->update($id, $name);
-      header('Location: /permissions');
-      exit;
+
+      return $this->redirect('/permissions');
     }
 
-    $view = BASE_PATH . "/views/permissions/edit.php";
-    require BASE_PATH . "/views/layouts/main.php";
+    $this->render('permissions/edit', compact('permission'));
   }
 
   public function delete($id)
   {
     $this->permissionModel->softDelete($id);
-    header('Location: /permissions');
-    exit;
+
+    return $this->redirect('/permissions');
   }
 
   public function restore($id)
   {
     $this->permissionModel->restore($id);
-    header('Location: /permissions');
-    exit;
+
+    return $this->redirect('/permissions');
   }
 
   public function roles()
@@ -94,8 +97,7 @@ class Permissions
         $this->permissionModel->assignToRole($role, $permissionIds);
       }
 
-      header("Location: /permissions/roles?role=" . $role);
-      exit;
+      return $this->redirect('/permissions/roles?role=' . $role);
     }
 
     $selectedRole = $_GET['role'] ?? null;
@@ -109,8 +111,7 @@ class Permissions
       );
     }
 
-    $view = BASE_PATH . "/views/permissions/roles.php";
-    require BASE_PATH . "/views/layouts/main.php";
+    $this->render('/permissions/roles', compact('rolePermissions', 'selectedRole', 'allPermissions', 'roles'));
   }
 
   public function updateRolePermissions()
@@ -123,14 +124,12 @@ class Permissions
         $this->permissionModel->assignToRole($role, $permissionIds);
       }
 
-      header('Location: /permissions/roles');
-      exit;
+      return $this->redirect("/permissions/roles");
     }
   }
 
   public function users()
   {
-
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       $userId = $_POST['user_id'] ?? null;
@@ -140,8 +139,7 @@ class Permissions
         $this->permissionModel->assignToUser($userId, $permissionIds);
       }
 
-      header("Location: /permissions/users?user_id=" . $userId);
-      exit;
+      return $this->redirect("/permissions/users?user_id=" . $userId);
     }
 
     $users = $this->userModel->getAll();
@@ -154,7 +152,6 @@ class Permissions
     $selectedUserRole = null;
 
     if ($selectedUserId) {
-
       $selectedUser = $this->userModel->find($selectedUserId);
 
       $userPermissions = array_column(
@@ -167,8 +164,15 @@ class Permissions
 
     $roles = ['admin', 'teacher', 'student'];
 
-    $view = BASE_PATH . "/views/permissions/users.php";
-    require BASE_PATH . "/views/layouts/main.php";
+    return $this->render('permissions/users', [
+      'users' => $users,
+      'allPermissions' => $allPermissions,
+      'selectedUserId' => $selectedUserId,
+      'selectedUser' => $selectedUser,
+      'userPermissions' => $userPermissions,
+      'selectedUserRole' => $selectedUserRole,
+      'roles' => $roles
+    ]);
   }
 
   public function getRolePermissionsJson()
@@ -194,8 +198,7 @@ class Permissions
 
       $this->permissionModel->assignToUser($userId, $permissionIds);
 
-      header('Location: /permissions/users?user_id=' . $userId);
-      exit;
+      return $this->redirect("/permissions/users?user_id=' . $userId");
     }
   }
 }

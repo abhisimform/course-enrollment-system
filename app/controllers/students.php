@@ -2,45 +2,53 @@
 
 require_once BASE_PATH . "/app/models/Student.php";
 
-class Students
+class Students extends BaseController
 {
   private $studentModel;
 
   public function __construct()
   {
     requireLogin();
-
     $this->studentModel = new StudentModel();
   }
 
   public function index()
   {
-    $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $currentPage = (int)($_GET['page'] ?? 1);
     $perPage = 10;
 
     $search = $_GET['search'] ?? '';
-    $showDeleted = isset($_GET['deleted']) ? true : false;
+    $showDeleted = isset($_GET['deleted']);
 
     $students = $this->studentModel->getStudents($search, $currentPage, $perPage, $showDeleted);
     $totalStudents = $this->studentModel->countStudents($search, $showDeleted);
     $totalPages = ceil($totalStudents / $perPage);
 
-    $view = BASE_PATH . "/views/students/index.php";
-    require BASE_PATH . "/views/layouts/main.php";
+    return $this->render('students/index', compact(
+      'students',
+      'currentPage',
+      'perPage',
+      'search',
+      'showDeleted',
+      'totalPages'
+    ));
   }
 
   public function restore($id)
   {
-    if (Rbac::has('restore_student')) die("Access denied");
+    if (!Rbac::has('restore_student')) {
+      die("Access denied");
+    }
+
     $this->studentModel->restore($id);
     setFlash('success', 'Student restored');
-    header("Location: /students?deleted=1");
-    exit;
+
+    return $this->redirect("/students?deleted=1");
   }
 
   public function create()
   {
-    if (Rbac::has('create_student')) {
+    if (!Rbac::has('create_student')) {
       die("Access denied");
     }
 
@@ -52,22 +60,26 @@ class Students
       $email = trim($_POST['email'] ?? '');
       $password = $_POST['password'] ?? '';
 
-      if ($name === '')
+      if ($name === '') {
         $errors['name'] = 'Name is required';
+      }
 
-      if ($email === '')
+      if ($email === '') {
         $errors['email'] = 'Email is required';
-      elseif (!filter_var($email, FILTER_VALIDATE_EMAIL))
+      } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors['email'] = 'Invalid email';
-      elseif ($this->studentModel->emailExists($email))
+      } elseif ($this->studentModel->emailExists($email)) {
         $errors['email'] = 'Email already in use';
+      }
 
-      if ($password === '')
+      if ($password === '') {
         $errors['password'] = 'Password is required';
-      elseif (strlen($password) < 6)
+      } elseif (strlen($password) < 6) {
         $errors['password'] = 'Password must be at least 6 characters';
+      }
 
       if (empty($errors)) {
+
         $this->studentModel->create([
           'name' => $name,
           'email' => $email,
@@ -75,13 +87,12 @@ class Students
         ]);
 
         setFlash('success', 'Student created');
-        header("Location: /students");
-        exit;
+
+        return $this->redirect("/students");
       }
     }
 
-    $view = BASE_PATH . "/views/students/create.php";
-    require BASE_PATH . "/views/layouts/main.php";
+    return $this->render('students/create', compact('errors'));
   }
 
   public function view($id)
@@ -92,17 +103,20 @@ class Students
       die("Student not found");
     }
 
-    require BASE_PATH . "/views/students/view.php";
+    return $this->render('students/view', compact('student'));
   }
 
   public function edit($id)
   {
-    if (Rbac::has('edit_student')) {
+    if (!Rbac::has('edit_student')) {
       die("Access denied");
     }
 
     $student = $this->studentModel->find($id);
-    if (!$student) die("Student not found");
+
+    if (!$student) {
+      die("Student not found");
+    }
 
     $errors = [];
 
@@ -112,14 +126,15 @@ class Students
       $email = trim($_POST['email'] ?? '');
       $password = $_POST['password'] ?? '';
 
-      if ($name === '')
+      if ($name === '') {
         $errors['name'] = 'Name is required';
+      }
 
-      if ($email === '')
+      if ($email === '') {
         $errors['email'] = 'Email is required';
-      elseif (!filter_var($email, FILTER_VALIDATE_EMAIL))
+      } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors['email'] = 'Invalid email';
-      elseif ($email !== $student['email'] && $this->studentModel->emailExists($email)) {
+      } elseif ($email !== $student['email'] && $this->studentModel->emailExists($email)) {
         $errors['email'] = 'Email already in use';
       }
 
@@ -128,6 +143,7 @@ class Students
       }
 
       if (empty($errors)) {
+
         $this->studentModel->update($id, [
           'name' => $name,
           'email' => $email,
@@ -135,25 +151,24 @@ class Students
         ]);
 
         setFlash('success', 'Student updated');
-        header("Location: /students/view/$id");
-        exit;
+
+        return $this->redirect("/students/view/$id");
       }
     }
 
-    $view = BASE_PATH . "/views/students/edit.php";
-    require BASE_PATH . "/views/layouts/main.php";
+    return $this->render('students/edit', compact('student', 'errors'));
   }
 
   public function delete($id)
   {
-    if (Rbac::has('delete_student')) {
+    if (!Rbac::has('delete_student')) {
       die("Access denied");
     }
 
     $this->studentModel->softDelete($id);
 
     setFlash('success', 'Student deleted');
-    header("Location: /students");
-    exit;
+
+    return $this->redirect("/students");
   }
 }

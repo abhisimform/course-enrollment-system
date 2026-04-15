@@ -4,7 +4,7 @@ require_once BASE_PATH . '/app/models/Student.php';
 require_once BASE_PATH . '/app/models/Course.php';
 require_once BASE_PATH . '/app/models/Enrollment.php';
 
-class Dashboard
+class Dashboard extends BaseController
 {
   public function index()
   {
@@ -20,7 +20,6 @@ class Dashboard
       'enrollments' => $enrollmentModel->countActive()
     ];
 
-    $view = BASE_PATH . "/views/dashboard/index.php";
-    require BASE_PATH . "/views/layouts/main.php";
+    return $this->render('dashboard/index', $data);
   }
 }
