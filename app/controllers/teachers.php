@@ -1,16 +1,13 @@
 <?php
 
+require_once BASE_PATH . "/app/models/Teacher.php";
+
 class Teachers
 {
-
   private $teacherModel;
 
   public function __construct()
   {
-    require_once BASE_PATH . "/app/models/Teacher.php";
-    require_once BASE_PATH . "/utils/helper.php";
-
-    // dd(1);
     requireLogin();
 
     $this->teacherModel = new TeacherModel();
@@ -23,7 +20,7 @@ class Teachers
     $perPage = 10;
 
     $search = $_GET['search'] ?? '';
-    
+
     $showDeleted = isset($_GET['deleted']) ? true : false;
 
     $teachers = $this->teacherModel->getTeachers($search, $currentPage, $perPage, $showDeleted);

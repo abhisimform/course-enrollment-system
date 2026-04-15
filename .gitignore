@@ -1,1 +1,2 @@
-logs
+logs/
+config/*.sql

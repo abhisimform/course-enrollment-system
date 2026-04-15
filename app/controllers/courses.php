@@ -1,14 +1,13 @@
 <?php
 
+require_once BASE_PATH . "/app/models/Course.php";
+
 class Courses
 {
   private $courseModel;
 
   public function __construct()
   {
-    require_once BASE_PATH . "/app/models/Course.php";
-    require_once BASE_PATH . "/utils/helper.php";
-
     requireLogin();
 
     $this->courseModel = new CourseModel();

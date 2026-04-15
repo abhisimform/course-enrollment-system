@@ -1,5 +1,8 @@
 <?php
 
+require_once BASE_PATH . '/app/models/User.php';
+require_once BASE_PATH . '/app/models/Permission.php';
+
 class Permissions
 {
   private $permissionModel;
@@ -9,9 +12,6 @@ class Permissions
 
   public function __construct()
   {
-    require_once BASE_PATH . '/app/models/User.php';
-    require_once BASE_PATH . '/app/models/Permission.php';
-
     $this->permissionModel = new PermissionModel();
     $this->userModel = new UserModel();
   }

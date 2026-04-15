@@ -1,5 +1,8 @@
 <?php
 
+require_once BASE_PATH . '/app/models/Auth.php';
+require_once BASE_PATH . '/app/models/Permission.php';
+
 class Auth
 {
   private $authModel;
@@ -7,10 +10,6 @@ class Auth
 
   public function __construct()
   {
-    require_once BASE_PATH . '/app/models/Auth.php';
-    require_once BASE_PATH . '/app/models/Permission.php';
-    require_once BASE_PATH . '/utils/helper.php';
-
     $this->permissionModel = new PermissionModel();
     $this->authModel = new AuthModel();
   }
@@ -29,8 +28,7 @@ class Auth
         die("Invalid CSRF token");
       }
 
-      $email = trim($_POST['email']);
-      $password = $_POST['password'];
+      ['email' => $email, 'password' => $password] = $_POST;
 
       $user = $this->authModel->login($email, $password);
 

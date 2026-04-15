@@ -1,14 +1,13 @@
 <?php
 
+require_once BASE_PATH . '/app/models/Audit.php';
+
 class Audit
 {
   private $auditModel;
 
   public function __construct()
   {
-    require_once BASE_PATH . '/app/models/Audit.php';
-    require_once BASE_PATH . '/utils/helper.php';
-
     requireLogin();
 
     Rbac::has('audit.view');
