@@ -12,6 +12,7 @@ class Permissions extends BaseController
 
   public function __construct()
   {
+    Rbac::require('permission.manage');
     $this->permissionModel = new PermissionModel();
     $this->userModel = new UserModel();
   }
@@ -24,8 +25,8 @@ class Permissions extends BaseController
 
     $q = $_GET['q'] ?? '';
 
-    $permissions = $this->permissionModel->getPaginated($perPage, $offset, $_GET['q'] ?? '');
-    $total = $this->permissionModel->countFiltered($_GET['q'] ?? '');
+    $permissions = $this->permissionModel->getPaginated($perPage, $offset, $q);
+    $total = $this->permissionModel->countFiltered($q ?? '');
 
     $this->render('permissions/index', [
       'permissions' => $permissions,

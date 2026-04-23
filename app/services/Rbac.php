@@ -53,6 +53,6 @@ class Rbac
   private static function deny()
   {
     http_response_code(403);
-    die('403 Forbidden - You do not have permission to access this resource.');
+    die('403 Forbidden - You do not have permission to access this resource. <a href="/auth/login">Go Back</a>');
   }
 }

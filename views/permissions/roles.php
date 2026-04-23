@@ -10,7 +10,6 @@
         <?= ucfirst($role) ?>
       </option>
     <?php endforeach; ?>
-
   </select>
 </form>
 
@@ -26,25 +25,65 @@
 
     <h3>Permissions for <?= ucfirst($selectedRole) ?></h3>
 
-    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+    <?php
+    $groupedPermissions = [];
+    foreach ($allPermissions as $perm) {
+      $parts = explode('.', $perm['name']);
+      $group = $parts[0];
+      $groupedPermissions[$group][] = $perm;
+    }
+    ?>
 
-      <?php foreach ($allPermissions as $perm): ?>
+    <!-- ✅ Scrollable Container -->
+    <div style="max-height:500px; overflow-y:auto; border:1px solid #ccc; border-radius:8px; padding:15px;">
 
-        <label style="border:1px solid #ccc; padding:8px; border-radius:6px;">
-          <input type="checkbox"
-            name="permissions[]"
-            value="<?= $perm['id'] ?>"
-            <?= in_array($perm['id'], $currentPermissions) ? 'checked' : '' ?>>
+      <!-- ✅ GRID: Multiple groups per row -->
+      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:15px;">
 
-          <?= htmlspecialchars($perm['name']) ?>
-        </label>
+        <?php foreach ($groupedPermissions as $group => $permissions): ?>
 
-      <?php endforeach; ?>
+          <details open style="border:1px solid #ddd; border-radius:8px; padding:10px; background:#fafafa;">
+            
+            <summary style="cursor:pointer; font-weight:bold; font-size:14px;">
+              <?= ucfirst($group) ?>
+            </summary>
+
+            <div style="margin-top:10px; display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap:6px;">
+
+              <?php foreach ($permissions as $perm): ?>
+
+                <?php
+                  $parts = explode('.', $perm['name']);
+                  $action = ucfirst($parts[1] ?? $perm['name']);
+                ?>
+
+                <label style="border:1px solid #eee; padding:5px; border-radius:5px; font-size:12px; background:white;">
+                  
+                  <input type="checkbox"
+                    name="permissions[]"
+                    value="<?= $perm['id'] ?>"
+                    <?= in_array($perm['id'], $currentPermissions) ? 'checked' : '' ?>>
+
+                  <?= htmlspecialchars($action) ?>
+
+                </label>
+
+              <?php endforeach; ?>
+
+            </div>
+
+          </details>
+
+        <?php endforeach; ?>
+
+      </div>
 
     </div>
 
     <br>
-    <button type="submit">💾 Save Role Permissions</button>
+    <button type="submit" style="padding:8px 16px; cursor:pointer;">
+      💾 Save Role Permissions
+    </button>
 
   </form>
 

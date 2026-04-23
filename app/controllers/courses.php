@@ -16,37 +16,58 @@ class Courses extends BaseController
   {
     Rbac::require('course.view');
 
-    $currentPage = (int)($_GET['page'] ?? 1);
-    $perPage = 10;
+    $options = QueryBuilder::build([
+      'query' => $_GET,
+      'filterableFields' => [
+        'status' => [
+          'column' => 'c.status',
+          'type' => 'int'
+        ],
+        'instructor_id' => [
+          'column' => 'c.instructor_id',
+          'type' => 'int'
+        ]
+      ],
+      'searchableFields' => [
+        'c.course_name',
+        'u.name'
+      ],
+      'joins' => [
+        "LEFT JOIN users u ON c.instructor_id = u.id"
+      ],
+      'allowedSorts' => [
+        'id' => 'c.id',
+        'course_name' => 'c.course_name',
+        'instructor_name' => 'u.name',
+        'status' => 'c.status'
+      ],
+      'defaultSort' => 'id',
+      'defaultOrder' => 'ASC',
+      'deletedColumn' => 'c.deleted_at',
+      'defaultLimit' => 10,
+      'maxLimit' => 100
+    ]);
 
-    $search = $_GET['search'] ?? '';
-    $status = $_GET['status'] ?? '';
-    $instructorId = $_GET['instructor'] ?? '';
+    $user = $_SESSION['user'];
+    $userId = $user['id'];
 
-    $courses = $this->courseModel->getCourses(
-      $search,
-      $status,
-      $instructorId,
-      $currentPage,
-      $perPage
-    );
+    $courses = $this->courseModel->getAll($options, $userId);
+    $total = $this->courseModel->countAll($options);
 
-    $totalCourses = $this->courseModel->countCourses($search, $status, $instructorId);
-    $totalPages = ceil($totalCourses / $perPage);
-
+    $totalPages = ceil($total / $options['limit']);
     $instructors = $this->courseModel->getInstructors();
 
-    return $this->render('courses/index', compact(
-      'courses',
-      'currentPage',
-      'perPage',
-      'search',
-      'status',
-      'instructorId',
-      'totalCourses',
-      'totalPages',
-      'instructors'
-    ));
+    return $this->render('courses/index', [
+      'courses' => $courses,
+      'pagination' => [
+        'totalItems' => $total,
+        'totalPages' => $totalPages,
+        'currentPage' => $options['page'],
+        'limit' => $options['limit']
+      ],
+      'filters' => $_GET,
+      'instructors' => $instructors
+    ]);
   }
 
   public function create()

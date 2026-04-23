@@ -33,6 +33,16 @@ class AuditModel
     return $stmt->fetchAll();
   }
 
+  public function count()
+  {
+    $stmt = $this->pdo->query("
+      SELECT COUNT(*) 
+      FROM {$this->table}
+    ");
+
+    return $stmt->fetchColumn();
+  }
+
   public function getRecords($search = "", $orderBy = "changed_at", $sortOrder = "DESC", $page = 1, $limit = 10)
   {
     $offset = ($page - 1) * $limit;

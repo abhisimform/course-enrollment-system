@@ -7,6 +7,7 @@ class Auth extends BaseController
 {
   private $authModel;
   private $permissionModel;
+  private $validator;
 
   protected $layout = 'public';
 
@@ -14,6 +15,7 @@ class Auth extends BaseController
   {
     $this->permissionModel = new PermissionModel();
     $this->authModel = new AuthModel();
+    $this->validator = new Validator();;
   }
 
   private function ensureCsrf()
@@ -67,7 +69,7 @@ class Auth extends BaseController
       setFlash('success', 'Login successful!');
 
       return $this->redirect(
-        $user['role'] === 'admin' ? '/dashboard' : '/students'
+        $user['role'] === 'admin' ? '/dashboard' : '/dashboard'
       );
     }
 
@@ -83,6 +85,14 @@ class Auth extends BaseController
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       $this->validateCsrf();
+
+      $rules = AuthValidator::register();
+
+      if (!$this->validator->validate($_POST, $rules)) {
+        $errors = $this->validator->errors();
+
+        return $this->redirect("/auth/register");
+      }
 
       $this->authModel->register($_POST);
 

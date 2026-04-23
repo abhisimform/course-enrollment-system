@@ -14,6 +14,8 @@ class Students extends BaseController
 
   public function index()
   {
+    Rbac::require('student.view_all');
+    
     $currentPage = (int)($_GET['page'] ?? 1);
     $perPage = 10;
 
@@ -95,15 +97,16 @@ class Students extends BaseController
     return $this->render('students/create', compact('errors'));
   }
 
-  public function view($id)
+  public function self()
   {
+    $id = $_SESSION['user']['id'];
     $student = $this->studentModel->find($id);
 
     if (!$student) {
       die("Student not found");
     }
 
-    return $this->render('students/view', compact('student'));
+    return $this->render('students/self', compact('student'));
   }
 
   public function edit($id)

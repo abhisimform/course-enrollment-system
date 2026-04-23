@@ -15,58 +15,77 @@ class CourseModel
     return "deleted_at IS NULL";
   }
 
-  public function getAll()
+  public function getAll($options, $userId = null)
   {
-    $stmt = $this->pdo->prepare("
-            SELECT * 
-            FROM {$this->table} 
-            WHERE {$this->baseCondition()} 
-            ORDER BY id DESC
-        ");
+    $joinSql = implode(' ', $options['joins']);
+
+    $sql = "
+      SELECT 
+        c.*, 
+        u.name as instructor_name,
+
+        COUNT(e.id) AS filled_seats,
+        (c.max_seats - COUNT(e.id)) AS available_seats,
+
+        eu.id as en_id,
+        -- ✅ Check if current student is enrolled
+        MAX(CASE 
+            WHEN eu.id IS NOT NULL THEN 1 
+            ELSE 0 
+        END) AS is_enrolled
+
+      FROM {$this->table} c
+      $joinSql
+
+      LEFT JOIN enrollments e 
+        ON e.course_id = c.id 
+        AND e.deleted_at IS NULL
+
+      LEFT JOIN enrollments eu 
+        ON eu.course_id = c.id 
+        AND eu.student_id = :user_id
+        AND eu.deleted_at IS NULL
+
+      WHERE {$options['whereSql']}
+
+      GROUP BY c.id
+
+      ORDER BY {$options['orderBy']}
+      LIMIT :offset, :limit
+    ";
+
+    $stmt = $this->pdo->prepare($sql);
+
+    foreach ($options['bindings'] as $k => $v) {
+      $stmt->bindValue($k, $v);
+    }
+
+    $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $options['offset'], PDO::PARAM_INT);
+    $stmt->bindValue(':limit', $options['limit'], PDO::PARAM_INT);
 
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
 
-  public function getCourses($search, $status, $instructorId, $currentPage, $perPage)
+  public function countAll($options)
   {
-    $sql = "SELECT c.*, u.name AS instructor_name FROM {$this->table} c
-                LEFT JOIN users u ON c.instructor_id = u.id
-                WHERE c.{$this->baseCondition()}";
+    $joinSql = implode(' ', $options['joins']);
 
-    if ($search) {
-      $sql .= " AND c.course_name LIKE :search";
-    }
-
-    if ($status !== '') {
-      $sql .= " AND c.status = :status";
-    }
-
-    if ($instructorId) {
-      $sql .= " AND c.instructor_id = :instructor";
-    }
-
-    $sql .= " ORDER BY c.id DESC LIMIT :offset, :perPage";
+    $sql = "SELECT COUNT(*) 
+      FROM {$this->table} c
+      $joinSql 
+      WHERE {$options['whereSql']}
+    ";
 
     $stmt = $this->pdo->prepare($sql);
 
-    if ($search) {
-      $stmt->bindValue(':search', '%' . $search . '%');
+    foreach ($options['bindings'] as $key => $value) {
+      $stmt->bindValue($key, $value);
     }
-    if ($status !== '') {
-      $stmt->bindValue(':status', $status, PDO::PARAM_INT);
-    }
-    if ($instructorId) {
-      $stmt->bindValue(':instructor', $instructorId, PDO::PARAM_INT);
-    }
-
-    $offset = ($currentPage - 1) * $perPage;
-    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-    $stmt->bindValue(':perPage', $perPage, PDO::PARAM_INT);
 
     $stmt->execute();
-
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return $stmt->fetchColumn();
   }
 
   public function getInstructors()
@@ -110,16 +129,16 @@ class CourseModel
   public function update($id, $data)
   {
     $stmt = $this->pdo->prepare("
-            UPDATE {$this->table} 
-            SET course_name = :course_name,
-                instructor_id = :instructor_id,
-                duration_weeks = :duration_weeks,
-                max_seats = :max_seats,
-                status = :status,
-                updated_at = NOW()
-            WHERE id = :id
-            AND {$this->baseCondition()}
-        ");
+      UPDATE {$this->table} 
+      SET course_name = :course_name,
+        instructor_id = :instructor_id,
+        duration_weeks = :duration_weeks,
+        max_seats = :max_seats,
+        status = :status,
+        updated_at = NOW()
+      WHERE id = :id
+      AND {$this->baseCondition()}
+    ");
 
     return $stmt->execute([
       'id'            => $id,
@@ -170,44 +189,11 @@ class CourseModel
   public function count()
   {
     $stmt = $this->pdo->query("
-            SELECT COUNT(*) as total 
-            FROM {$this->table} 
-            WHERE {$this->baseCondition()}
-        ");
+      SELECT COUNT(*) as total 
+      FROM {$this->table} 
+      WHERE {$this->baseCondition()}
+    ");
     return $stmt->fetch()['total'];
-  }
-
-  public function countCourses($search, $status, $instructorId)
-  {
-    $sql = "SELECT COUNT(*) FROM {$this->table} c WHERE c.{$this->baseCondition()}";
-
-    if ($search) {
-      $sql .= " AND c.course_name LIKE :search";
-    }
-
-    if ($status !== '') {
-      $sql .= " AND c.status = :status";
-    }
-
-    if ($instructorId) {
-      $sql .= " AND c.instructor_id = :instructor";
-    }
-
-    $stmt = $this->pdo->prepare($sql);
-
-    if ($search) {
-      $stmt->bindValue(':search', '%' . $search . '%');
-    }
-    if ($status !== '') {
-      $stmt->bindValue(':status', $status, PDO::PARAM_INT);
-    }
-    if ($instructorId) {
-      $stmt->bindValue(':instructor', $instructorId, PDO::PARAM_INT);
-    }
-
-    $stmt->execute();
-
-    return $stmt->fetchColumn();
   }
 
   public function getCoursesByInstructor($instructorId)
@@ -248,5 +234,21 @@ class CourseModel
     ");
     $stmt->execute(['course_name' => $courseName]);
     return $stmt->fetch(PDO::FETCH_ASSOC);
+  }
+
+  public function getByUser($userId)
+  {
+    $stmt = $this->pdo->prepare("
+      SELECT c.*
+      FROM courses c
+      INNER JOIN enrollments e ON e.course_id = c.id
+      WHERE e.student_id = ?
+        AND e.status = 'active'
+        AND c.deleted_at IS NULL
+    ");
+
+    $stmt->execute([$userId]);
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
 }

@@ -63,4 +63,41 @@ class UserModel
         ");
     return $stmt->execute(['id' => $id]);
   }
+
+  public function count()
+  {
+    $stmt = $this->pdo->query("
+      SELECT COUNT(*) 
+      FROM {$this->table}
+      WHERE deleted_at IS NULL
+    ");
+
+    return $stmt->fetchColumn();
+  }
+
+  public function countByRole($role)
+  {
+    $stmt = $this->pdo->prepare("
+      SELECT COUNT(*) 
+      FROM {$this->table}
+      WHERE role = ?
+        AND deleted_at IS NULL
+    ");
+
+    $stmt->execute([$role]);
+
+    return $stmt->fetchColumn();
+  }
+
+  public function countInactive()
+  {
+    $stmt = $this->pdo->query("
+      SELECT COUNT(*) 
+      FROM {$this->table}
+      WHERE status = 0
+        AND deleted_at IS NULL
+    ");
+
+    return $stmt->fetchColumn();
+  }
 }

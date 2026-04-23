@@ -17,11 +17,10 @@
   >
 
   <input 
-    type="email" 
+    type="text" 
     name="email" 
     placeholder="Email"
     value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
-    required
   >
   <br><br>
 

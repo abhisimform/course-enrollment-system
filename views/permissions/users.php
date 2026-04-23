@@ -14,9 +14,7 @@
 
 <hr>
 
-<?php // dd($selectedUser);
-// dd($roles);
-if (!empty($selectedUser)): ?>
+<?php if (!empty($selectedUser)): ?>
 
   <h3>🧑 Selected User: <?= htmlspecialchars($selectedUser['name']) ?></h3>
 
@@ -46,22 +44,66 @@ if (!empty($selectedUser)): ?>
       placeholder="Search permission..."
       style="width:100%; padding:8px; margin-bottom:10px;">
 
-    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+    <?php
+    // ✅ Group permissions
+    $groupedPermissions = [];
+    foreach ($allPermissions as $perm) {
+      $parts = explode('.', $perm['name']);
+      $group = $parts[0];
+      $groupedPermissions[$group][] = $perm;
+    }
+    ?>
 
-      <?php foreach ($allPermissions as $perm): ?>
+    <!-- ✅ Scrollable container -->
+    <div style="max-height:500px; overflow-y:auto; border:1px solid #ccc; border-radius:8px; padding:15px;">
 
-        <div class="perm-item">
-          <label style="border:1px solid #ccc; padding:8px; border-radius:6px; display:block;">
-            <input type="checkbox"
-              name="permissions[]"
-              value="<?= $perm['id'] ?>"
-              <?= in_array($perm['id'], $userPermissions ?? []) ? 'checked' : '' ?>>
+      <!-- ✅ Groups in grid (3–4 per row) -->
+      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:15px;">
 
-            <?= htmlspecialchars($perm['name']) ?>
-          </label>
-        </div>
+        <?php foreach ($groupedPermissions as $group => $permissions): ?>
 
-      <?php endforeach; ?>
+          <!-- ✅ Always open accordion -->
+          <details open style="border:1px solid #ddd; border-radius:8px; padding:10px; background:#fafafa;">
+
+            <summary style="font-weight:bold; font-size:14px;">
+              <?= ucfirst($group) ?>
+            </summary>
+
+            <!-- ✅ Permissions inside group -->
+            <div style="margin-top:10px; display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap:6px;">
+
+              <?php foreach ($permissions as $perm): ?>
+
+                <?php
+                $parts = explode('.', $perm['name']);
+                // print_r($perm['name']);
+                $action = ucfirst($parts[1] ?? $perm['name']);
+                $action = $perm['name'];
+                ?>
+
+                <!-- ⚠️ KEEP .perm-item for search JS -->
+                <div class="perm-item">
+                  <label style="border:1px solid #eee; padding:5px; border-radius:5px; font-size:12px; background:white; display:block;">
+
+                    <input type="checkbox"
+                      name="permissions[]"
+                      value="<?= $perm['id'] ?>"
+                      <?= in_array($perm['id'], $userPermissions ?? []) ? 'checked' : '' ?>>
+
+                    <?= htmlspecialchars($action) ?>
+
+                  </label>
+                </div>
+
+              <?php endforeach; ?>
+
+            </div>
+
+          </details>
+
+        <?php endforeach; ?>
+
+      </div>
 
     </div>
 

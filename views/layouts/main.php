@@ -5,12 +5,33 @@
 
 <head>
   <title>Admin Panel</title>
-  <link rel="stylesheet" href="../assets/css/style.css">
+  <style>
+    body {
+      font-family: Arial;
+    }
+
+    a {
+      margin-right: 10px;
+      text-decoration: none;
+    }
+
+    .nav {
+      padding: 10px;
+      background: #f4f4f4;
+      margin-bottom: 10px;
+    }
+
+    .flash {
+      padding: 10px;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 
 <body>
 
-  <h2>Admin Panel</h2>
+  <h2><?= ucfirst($_SESSION['user']['role']) ?> Panel</h2>
 
   <p>
     Welcome, <?= $_SESSION['user']['name'] ?> (<?= $_SESSION['user']['role'] ?>)
@@ -20,33 +41,33 @@
 
   <div class="nav">
 
-    <?php if (hasPermission('dashboard.view')): ?>
+    <?php if (Rbac::has('dashboard.view')): ?>
       <a href="/dashboard">Dashboard</a>
     <?php endif; ?>
 
-    <?php if (hasPermission('student.view')): ?>
+    <?php if (Rbac::has('student.view_all')): ?>
       <a href="/students">Students</a>
     <?php endif; ?>
 
-    <?php if (hasPermission('course.view')): ?>
+    <?php if (Rbac::has('course.view')): ?>
       <a href="/courses">Courses</a>
     <?php endif; ?>
 
-    <?php if (hasPermission('enrollment.view')): ?>
+    <?php if (Rbac::has('enrollment.view')): ?>
       <a href="/enrollments">Enrollments</a>
     <?php endif; ?>
 
-    <?php if (hasPermission('teacher.view')): ?>
+    <?php if (Rbac::has('teacher.view')): ?>
       <a href="/teachers">Teachers</a>
     <?php endif; ?>
 
-    <?php if (hasPermission('permission.assign')): ?>
+    <?php if (Rbac::has('permission.assign')): ?>
       <a href="/permissions">Permissions</a>
       <a href="/permissions/roles">Role Permissions</a>
       <a href="/permissions/users">User Permissions</a>
     <?php endif; ?>
 
-    <?php if (hasPermission('audit.view')): ?>
+    <?php if (Rbac::has('audit.view')): ?>
       <a href="/audit">Audit Logs</a>
     <?php endif; ?>
 
@@ -64,6 +85,8 @@
 
   <?php require $view; ?>
 
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/jquery.validation/1.19.5/jquery.validate.min.js"></script>
   <script src="../assets/js/app.js"></script>
 </body>
 

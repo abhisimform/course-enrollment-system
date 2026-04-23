@@ -112,35 +112,132 @@ class PermissionModel
     return $stmt->execute([$id]);
   }
 
-  public function assignToRole($role, array $permissionIds)
+  public function count()
   {
-    $stmt = $this->pdo->prepare("DELETE FROM {$this->rolePermissionsTable} WHERE role = ?");
-    $stmt->execute([$role]);
-
-    $stmt = $this->pdo->prepare("
-      INSERT INTO {$this->rolePermissionsTable} 
-      (role, permission_id, created_at) 
-      VALUES (?, ?, NOW())
+    $stmt = $this->pdo->query("
+      SELECT COUNT(*) 
+      FROM {$this->table}
     ");
-    foreach ($permissionIds as $pid) {
-      $stmt->execute([$role, $pid]);
-    }
+
+    return $stmt->fetchColumn();
   }
 
-  public function assignToUser($userId, array $permissionIds)
+  public function assignToRole($role, array $newPermissionIds)
   {
-    $stmt = $this->pdo->prepare("DELETE FROM {$this->userPermissionsTable} WHERE user_id = ?");
-    $stmt->execute([$userId]);
+    $this->pdo->beginTransaction();
 
+    // 1. Get existing permissions
     $stmt = $this->pdo->prepare("
-      INSERT INTO {$this->userPermissionsTable} 
-      (user_id, permission_id, created_at) 
-      VALUES (?, ?, NOW())
+      SELECT permission_id 
+      FROM {$this->rolePermissionsTable} 
+      WHERE role = ?
+    ");
+    $stmt->execute([$role]);
+
+    $existing = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'permission_id');
+
+    $newPermissionIds = array_map('intval', $newPermissionIds);
+    $existing = array_map('intval', $existing);
+
+    // 2. Calculate diff
+    $toInsert = array_diff($newPermissionIds, $existing);
+    $toDelete = array_diff($existing, $newPermissionIds);
+
+    // 3. DELETE only removed permissions
+    if (!empty($toDelete)) {
+      $placeholders = implode(',', array_fill(0, count($toDelete), '?'));
+
+      $stmt = $this->pdo->prepare("
+        DELETE FROM {$this->rolePermissionsTable}
+        WHERE role = ?
+        AND permission_id IN ($placeholders)
+      ");
+
+      $stmt->execute(array_merge([$role], $toDelete));
+    }
+
+    // 4. INSERT only new permissions (bulk)
+    if (!empty($toInsert)) {
+
+      $placeholders = [];
+      $values = [];
+
+      foreach ($toInsert as $pid) {
+        $placeholders[] = "(?, ?, NOW())";
+        $values[] = $role;
+        $values[] = $pid;
+      }
+
+      $sql = "
+      INSERT INTO {$this->rolePermissionsTable}
+      (role, permission_id, created_at)
+      VALUES " . implode(',', $placeholders);
+
+      $stmt = $this->pdo->prepare($sql);
+      $stmt->execute($values);
+    }
+
+    $this->pdo->commit();
+  }
+
+  public function assignToUser($userId, array $newPermissionIds)
+  {
+    $this->pdo->beginTransaction();
+
+    // existing
+    $stmt = $this->pdo->prepare("
+      SELECT permission_id 
+      FROM {$this->userPermissionsTable} 
+      WHERE user_id = ?
     ");
 
-    foreach ($permissionIds as $pid) {
-      $stmt->execute([$userId, $pid]);
+    $stmt->execute([$userId]);
+
+    $existing = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'permission_id');
+
+    // dd($userId, $newPermissionIds, $existing);
+
+    $newPermissionIds = array_map('intval', $newPermissionIds);
+    $existing = array_map('intval', $existing);
+
+    $toInsert = array_diff($newPermissionIds, $existing);
+    $toDelete = array_diff($existing, $newPermissionIds);
+
+    // dd($userId, $newPermissionIds, $existing, $toInsert, $toDelete);
+
+    // delete only removed
+    if (!empty($toDelete)) {
+      $placeholders = implode(',', array_fill(0, count($toDelete), '?'));
+
+      $stmt = $this->pdo->prepare("
+      DELETE FROM {$this->userPermissionsTable}
+      WHERE user_id = ?
+      AND permission_id IN ($placeholders)
+    ");
+
+      $stmt->execute(array_merge([$userId], $toDelete));
     }
+
+    // insert only new
+    if (!empty($toInsert)) {
+      $placeholders = [];
+      $values = [];
+
+      foreach ($toInsert as $pid) {
+        $placeholders[] = "(?, ?, NOW())";
+        $values[] = $userId;
+        $values[] = $pid;
+      }
+
+      $sql = "INSERT INTO {$this->userPermissionsTable}
+        (user_id, permission_id, created_at)
+        VALUES " . implode(',', $placeholders);
+
+      $stmt = $this->pdo->prepare($sql);
+      $stmt->execute($values);
+    }
+
+    $this->pdo->commit();
   }
 
   public function getRolePermissions($role)

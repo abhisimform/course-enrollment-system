@@ -5,12 +5,6 @@
   <meta charset="UTF-8">
   <title>View Student</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 40px;
-      background: #f5f5f5;
-    }
-
     .card {
       background: #fff;
       padding: 20px;
