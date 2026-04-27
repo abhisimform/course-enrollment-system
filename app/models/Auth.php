@@ -18,12 +18,12 @@ class AuthModel
   public function login($email, $password)
   {
     $stmt = $this->pdo->prepare("
-            SELECT * 
-            FROM {$this->table} 
-            WHERE email = :email 
-            AND {$this->baseCondition()}
-            LIMIT 1
-        ");
+      SELECT * 
+      FROM {$this->table} 
+      WHERE email = :email 
+      AND {$this->baseCondition()}
+      LIMIT 1
+    ");
 
     $stmt->execute(['email' => $email]);
     $user = $stmt->fetch();
@@ -42,12 +42,12 @@ class AuthModel
   public function findUser($id)
   {
     $stmt = $this->pdo->prepare("
-            SELECT id, name, email, role
-            FROM {$this->table}
-            WHERE id = :id
-            AND {$this->baseCondition()}
-            LIMIT 1
-        ");
+      SELECT id, name, email, role
+      FROM {$this->table}
+      WHERE id = :id
+      AND {$this->baseCondition()}
+      LIMIT 1
+    ");
 
     $stmt->execute(['id' => $id]);
     return $stmt->fetch();
@@ -56,9 +56,9 @@ class AuthModel
   public function register($data)
   {
     $stmt = $this->pdo->prepare("
-            INSERT INTO {$this->table} (name, email, password, role)
-            VALUES (:name, :email, :password, :role)
-        ");
+      INSERT INTO {$this->table} (name, email, password, role)
+      VALUES (:name, :email, :password, :role)
+    ");
 
     return $stmt->execute([
       'name'     => $data['name'],

@@ -33,7 +33,6 @@ class TeacherModel
     }
     $stmt->bindValue(':offset', ($currentPage - 1) * $perPage, PDO::PARAM_INT);
     $stmt->bindValue(':perPage', $perPage, PDO::PARAM_INT);
-    // dd($stmt, $search, $currentPage, $perPage, $deleted);
     $stmt->execute();
 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);

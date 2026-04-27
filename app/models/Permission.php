@@ -112,6 +112,38 @@ class PermissionModel
     return $stmt->execute([$id]);
   }
 
+  public function hardDelete($id)
+  {
+    $this->pdo->beginTransaction();
+
+    try {
+      $deleteRolePermissions = $this->pdo->prepare("
+        DELETE FROM {$this->rolePermissionsTable}
+        WHERE permission_id = ?
+      ");
+      $deleteRolePermissions->execute([$id]);
+
+      $deleteUserPermissions = $this->pdo->prepare("
+        DELETE FROM {$this->userPermissionsTable}
+        WHERE permission_id = ?
+      ");
+      $deleteUserPermissions->execute([$id]);
+
+      $deletePermission = $this->pdo->prepare("
+        DELETE FROM {$this->table}
+        WHERE id = ?
+        AND deleted_at IS NOT NULL
+      ");
+      $deletePermission->execute([$id]);
+
+      $this->pdo->commit();
+      return true;
+    } catch (Throwable $exception) {
+      $this->pdo->rollBack();
+      throw $exception;
+    }
+  }
+
   public function count()
   {
     $stmt = $this->pdo->query("
@@ -126,7 +158,6 @@ class PermissionModel
   {
     $this->pdo->beginTransaction();
 
-    // 1. Get existing permissions
     $stmt = $this->pdo->prepare("
       SELECT permission_id 
       FROM {$this->rolePermissionsTable} 
@@ -139,24 +170,21 @@ class PermissionModel
     $newPermissionIds = array_map('intval', $newPermissionIds);
     $existing = array_map('intval', $existing);
 
-    // 2. Calculate diff
     $toInsert = array_diff($newPermissionIds, $existing);
     $toDelete = array_diff($existing, $newPermissionIds);
 
-    // 3. DELETE only removed permissions
     if (!empty($toDelete)) {
       $placeholders = implode(',', array_fill(0, count($toDelete), '?'));
 
       $stmt = $this->pdo->prepare("
         DELETE FROM {$this->rolePermissionsTable}
         WHERE role = ?
-        AND permission_id IN ($placeholders)
+          AND permission_id IN ($placeholders)
       ");
 
       $stmt->execute(array_merge([$role], $toDelete));
     }
 
-    // 4. INSERT only new permissions (bulk)
     if (!empty($toInsert)) {
 
       $placeholders = [];
@@ -169,8 +197,7 @@ class PermissionModel
       }
 
       $sql = "
-      INSERT INTO {$this->rolePermissionsTable}
-      (role, permission_id, created_at)
+      INSERT INTO {$this->rolePermissionsTable} (role, permission_id, created_at)
       VALUES " . implode(',', $placeholders);
 
       $stmt = $this->pdo->prepare($sql);
@@ -184,7 +211,6 @@ class PermissionModel
   {
     $this->pdo->beginTransaction();
 
-    // existing
     $stmt = $this->pdo->prepare("
       SELECT permission_id 
       FROM {$this->userPermissionsTable} 
@@ -195,30 +221,24 @@ class PermissionModel
 
     $existing = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'permission_id');
 
-    // dd($userId, $newPermissionIds, $existing);
-
     $newPermissionIds = array_map('intval', $newPermissionIds);
     $existing = array_map('intval', $existing);
 
     $toInsert = array_diff($newPermissionIds, $existing);
     $toDelete = array_diff($existing, $newPermissionIds);
 
-    // dd($userId, $newPermissionIds, $existing, $toInsert, $toDelete);
-
-    // delete only removed
     if (!empty($toDelete)) {
       $placeholders = implode(',', array_fill(0, count($toDelete), '?'));
 
       $stmt = $this->pdo->prepare("
-      DELETE FROM {$this->userPermissionsTable}
-      WHERE user_id = ?
-      AND permission_id IN ($placeholders)
-    ");
+        DELETE FROM {$this->userPermissionsTable}
+        WHERE user_id = ?
+          AND permission_id IN ($placeholders)
+      ");
 
       $stmt->execute(array_merge([$userId], $toDelete));
     }
 
-    // insert only new
     if (!empty($toInsert)) {
       $placeholders = [];
       $values = [];
@@ -257,11 +277,11 @@ class PermissionModel
   public function getUserPermissions($userId)
   {
     $stmt = $this->pdo->prepare("
-        SELECT p.id, p.name
-        FROM {$this->userPermissionsTable} up
-        JOIN {$this->table} p ON p.id = up.permission_id
-        WHERE up.user_id = ?
-          AND p.deleted_at IS NULL
+      SELECT p.id, p.name
+      FROM {$this->userPermissionsTable} up
+      JOIN {$this->table} p ON p.id = up.permission_id
+      WHERE up.user_id = ?
+        AND p.deleted_at IS NULL
     ");
 
     $stmt->execute([$userId]);
@@ -271,7 +291,7 @@ class PermissionModel
   public function getUserRole($userId)
   {
     $stmt = $this->pdo->prepare("
-        SELECT role FROM users WHERE id = ?
+      SELECT role FROM users WHERE id = ?
     ");
 
     $stmt->execute([$userId]);

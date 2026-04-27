@@ -11,7 +11,6 @@ function buildQuery($overrides = [])
   return http_build_query($query);
 }
 
-// Helper for sorting links
 function sortLink($column)
 {
   $currentSort = $GLOBALS['filters']['sortBy'] ?? '';
@@ -30,7 +29,6 @@ function sortLink($column)
   ]);
 }
 
-// Optional: show arrow icon
 function sortIcon($column)
 {
   if (($GLOBALS['filters']['sortBy'] ?? '') === $column) {
@@ -89,7 +87,6 @@ $currentLimit = (int)($filters['limit'] ?? 10);
   <a href="/courses" style="margin-left:10px;">Clear</a>
 </form>
 
-<!-- 📊 Table -->
 <table border="1" cellpadding="10">
   <tr>
     <th>
@@ -136,7 +133,7 @@ $currentLimit = (int)($filters['limit'] ?? 10);
       <th>Manage</th>
     <?php endif; ?>
 
-    <?php if (Rbac::has('enrollment.create')): ?>
+    <?php if (Rbac::has('enrollment.create') && !Rbac::isAdmin()): ?>
       <th>Enrollment</th>
     <?php endif; ?>
   </tr>
@@ -150,7 +147,6 @@ $currentLimit = (int)($filters['limit'] ?? 10);
 
       $percentage = $total > 0 ? ($filled / $total) * 100 : 0;
 
-      // Decide color
       if ($percentage >= 90) {
         $color = 'green';
       } elseif ($percentage >= 50) {
@@ -183,7 +179,6 @@ $currentLimit = (int)($filters['limit'] ?? 10);
           <?php endif; ?>
         </td>
 
-        <!-- 👨‍💼 ADMIN / TEACHER ACTIONS -->
         <?php if (Rbac::has('course.edit') || Rbac::has('course.delete')): ?>
           <td>
 
@@ -220,8 +215,7 @@ $currentLimit = (int)($filters['limit'] ?? 10);
         <?php endif; ?>
 
 
-        <!-- 🎓 STUDENT ENROLLMENT -->
-        <?php if (Rbac::has('enrollment.create')): ?>
+        <?php if (Rbac::has('enrollment.create') && !Rbac::isAdmin()): ?>
           <td>
 
             <?php if (!empty($course['is_enrolled'])): ?>
@@ -257,7 +251,6 @@ $currentLimit = (int)($filters['limit'] ?? 10);
 
 <hr>
 
-<!-- 📄 Pagination -->
 <div class="pagination">
 
   <?php if ($pagination['currentPage'] > 1): ?>

@@ -54,11 +54,6 @@ function dd(...$vars)
 
   echo '</div>';
 
-  echo '
-    <script>
-        // All accordions are closed by default (already handled via CSS)
-    </script>
-    ';
   die();
 }
 

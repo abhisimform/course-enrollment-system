@@ -27,6 +27,13 @@
       margin-bottom: 10px;
     }
   </style>
+
+  <!-- jQuery library -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+  <!-- jQuery Validation -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.22.0/dist/jquery.validate.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.22.0/dist/additional-methods.min.js"></script>
 </head>
 
 <body>
@@ -45,7 +52,7 @@
       <a href="/dashboard">Dashboard</a>
     <?php endif; ?>
 
-    <?php if (Rbac::has('student.view_all')): ?>
+    <?php if (Rbac::has('student.viewall')): ?>
       <a href="/students">Students</a>
     <?php endif; ?>
 
@@ -57,7 +64,7 @@
       <a href="/enrollments">Enrollments</a>
     <?php endif; ?>
 
-    <?php if (Rbac::has('teacher.view')): ?>
+    <?php if (Rbac::has('teacher.view') || Rbac::has('teacher.viewall')): ?>
       <a href="/teachers">Teachers</a>
     <?php endif; ?>
 
@@ -69,10 +76,14 @@
 
     <?php if (Rbac::has('audit.view')): ?>
       <a href="/audit">Audit Logs</a>
+      <a href="/authlogs">Auth Logs</a>
+    <?php endif; ?>
+
+    <?php if (Rbac::has('profile.view')): ?>
+      <a href="/auth/profile">My Profile</a>
     <?php endif; ?>
 
     <a href="/auth/logout">Logout</a>
-
   </div>
 
   <hr>
@@ -85,9 +96,9 @@
 
   <?php require $view; ?>
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/jquery.validation/1.19.5/jquery.validate.min.js"></script>
-  <script src="../assets/js/app.js"></script>
+  <script>
+    <?php readfile(BASE_PATH . '/public/assets/js/app.js'); ?>
+  </script>
 </body>
 
 </html>

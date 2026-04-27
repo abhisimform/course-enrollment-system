@@ -45,7 +45,6 @@
       style="width:100%; padding:8px; margin-bottom:10px;">
 
     <?php
-    // ✅ Group permissions
     $groupedPermissions = [];
     foreach ($allPermissions as $perm) {
       $parts = explode('.', $perm['name']);
@@ -54,34 +53,28 @@
     }
     ?>
 
-    <!-- ✅ Scrollable container -->
     <div style="max-height:500px; overflow-y:auto; border:1px solid #ccc; border-radius:8px; padding:15px;">
 
-      <!-- ✅ Groups in grid (3–4 per row) -->
       <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:15px;">
 
         <?php foreach ($groupedPermissions as $group => $permissions): ?>
 
-          <!-- ✅ Always open accordion -->
           <details open style="border:1px solid #ddd; border-radius:8px; padding:10px; background:#fafafa;">
 
             <summary style="font-weight:bold; font-size:14px;">
               <?= ucfirst($group) ?>
             </summary>
 
-            <!-- ✅ Permissions inside group -->
             <div style="margin-top:10px; display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap:6px;">
 
               <?php foreach ($permissions as $perm): ?>
 
                 <?php
                 $parts = explode('.', $perm['name']);
-                // print_r($perm['name']);
                 $action = ucfirst($parts[1] ?? $perm['name']);
                 $action = $perm['name'];
                 ?>
 
-                <!-- ⚠️ KEEP .perm-item for search JS -->
                 <div class="perm-item">
                   <label style="border:1px solid #eee; padding:5px; border-radius:5px; font-size:12px; background:white; display:block;">
 

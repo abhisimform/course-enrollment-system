@@ -11,30 +11,34 @@ class Audit extends BaseController
     requireLogin();
 
     Rbac::has('audit.view');
-    
+
     $this->auditModel = new AuditModel();
   }
 
   public function index()
   {
-    // $table = $_GET['table'] ?? null;
-    // $actionType = $_GET['action_type'] ?? null;
-
-    // $logs = $this->auditModel->getAll($table, $actionType);
-
-    // $tables = $this->auditModel->getAllTables();
-
     $search = $_GET['search'] ?? '';
-    $page = $_GET['page'] ?? 1;
-    $limit = $_GET['limit'] ?? 10;
+    $table = $_GET['table'] ?? '';
+    $actionType = $_GET['action_type'] ?? '';
+    $page = max(1, (int)($_GET['page'] ?? 1));
+    $limit = min(100, max(1, (int)($_GET['limit'] ?? 10)));
     $orderBy = $_GET['order_by'] ?? 'changed_at';
     $sortOrder = $_GET['sort_order'] ?? 'DESC';
 
-    $logs = $this->auditModel->getRecords($search, $orderBy, $sortOrder, $page, $limit);
+    $logs = $this->auditModel->getRecords($search, $orderBy, $sortOrder, $page, $limit, $table, $actionType);
 
-    $totalRecords = $this->auditModel->getTotalCount($search);
+    $totalRecords = $this->auditModel->getTotalCount($search, $table, $actionType);
     $totalPages = ceil($totalRecords / $limit);
+    $tables = $this->auditModel->getAllTables();
+    $filters = $_GET;
 
-    $this->render("/audit/index", compact('search', 'page', 'limit', 'orderBy', 'sortOrder', 'logs', 'totalPages', 'totalRecords'));
+    $this->render("/audit/index", compact('search', 'table', 'actionType', 'page', 'limit', 'orderBy', 'sortOrder', 'logs', 'totalPages', 'totalRecords', 'tables', 'filters'));
+  }
+
+  public function view($id)
+  {
+    $log = $this->auditModel->find($id);
+
+    $this->render('/audit/view', compact('log'));
   }
 }

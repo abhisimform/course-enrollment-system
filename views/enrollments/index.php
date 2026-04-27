@@ -4,7 +4,6 @@
 
   <?php
 
-  // Helper for sorting links
   function sortLink($column)
   {
     $currentSort = $GLOBALS['filters']['sortBy'] ?? '';
@@ -23,7 +22,6 @@
     ]);
   }
 
-  // Optional: show arrow icon
   function sortIcon($column)
   {
     if (($GLOBALS['filters']['sortBy'] ?? '') === $column) {
@@ -92,7 +90,6 @@
 
   <hr>
 
-  <!-- pagination -->
   <div class="pagination">
 
     <?php

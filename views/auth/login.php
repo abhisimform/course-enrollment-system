@@ -1,35 +1,51 @@
 <h2>Login</h2>
 
-<?php if ($msg = getFlash('error')): ?>
-  <p style="color:red;"><?= htmlspecialchars($msg) ?></p>
-<?php endif; ?>
-
-<?php if ($msg = getFlash('success')): ?>
-  <p style="color:green;"><?= htmlspecialchars($msg) ?></p>
+<?php if (!empty($errors ?? [])): ?>
+  <ul style="color:red;">
+    <?php foreach ($errors as $error): ?>
+      <li><?= htmlspecialchars($error) ?></li>
+    <?php endforeach; ?>
+  </ul>
 <?php endif; ?>
 
 <form method="POST" action="/auth/login">
 
-  <input 
-    type="hidden" 
-    name="csrf_token" 
-    value="<?= $_SESSION['csrf_token'] ?>"
-  >
+  <input
+    type="hidden"
+    name="csrf_token"
+    value="<?= $_SESSION['csrf_token'] ?>">
 
-  <input 
-    type="text" 
-    name="email" 
+  <input
+    type="text"
+    name="email"
     placeholder="Email"
-    value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
-  >
+    value="<?= htmlspecialchars($old['email'] ?? '') ?>">
+  <br><br>
+  
+  <input
+  type="password"
+  name="password"
+  placeholder="Password">
+  <br><br>
+  
+  <img
+    id="captcha-image"
+    src="/auth/captcha"
+    alt="captcha">
+    
+  <button
+    type="button"
+    onclick="document.getElementById('captcha-image').src='/auth/captcha?t=' + Date.now();">
+    ⟲
+  </button>
   <br><br>
 
-  <input 
-    type="password" 
-    name="password" 
-    placeholder="Password" 
-    required
-  >
+  <input
+    type="text"
+    name="captcha"
+    placeholder="Enter captcha"
+    maxlength="6"
+    autocomplete="off">
   <br><br>
 
   <button type="submit">Login</button>

@@ -43,35 +43,55 @@ class AuditModel
     return $stmt->fetchColumn();
   }
 
-  public function getRecords($search = "", $orderBy = "changed_at", $sortOrder = "DESC", $page = 1, $limit = 10)
+  public function getRecords($search = "", $orderBy = "changed_at", $sortOrder = "DESC", $page = 1, $limit = 10, $table = "", $actionType = "")
   {
+    $allowedOrderColumns = ['id', 'table_name', 'action_type', 'record_id', 'changed_at'];
+    $orderBy = in_array($orderBy, $allowedOrderColumns, true) ? $orderBy : 'changed_at';
+    $sortOrder = strtoupper($sortOrder) === 'ASC' ? 'ASC' : 'DESC';
+    $page = max(1, (int)$page);
+    $limit = min(100, max(1, (int)$limit));
     $offset = ($page - 1) * $limit;
 
-    $searchCondition = "";
+    $conditions = [];
+    $params = [];
+
     if (!empty($search)) {
-      $searchCondition = "WHERE table_name LIKE :search_table 
-                          OR old_data LIKE :search_old_data 
-                          OR new_data LIKE :search_new_data 
-                          OR action_type LIKE :search_action_type 
-                          OR record_id LIKE :search_record_id";
+      $conditions[] = "(table_name LIKE :search_table 
+        OR old_data LIKE :search_old_data 
+        OR new_data LIKE :search_new_data 
+        OR action_type LIKE :search_action_type 
+        OR record_id LIKE :search_record_id)";
+      $params[':search_table'] = "%$search%";
+      $params[':search_old_data'] = "%$search%";
+      $params[':search_new_data'] = "%$search%";
+      $params[':search_action_type'] = "%$search%";
+      $params[':search_record_id'] = "%$search%";
     }
+
+    if (!empty($table)) {
+      $conditions[] = "table_name = :table";
+      $params[':table'] = $table;
+    }
+
+    if (!empty($actionType)) {
+      $conditions[] = "action_type = :action_type";
+      $params[':action_type'] = $actionType;
+    }
+
+    $whereSql = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
 
     $sql = "
       SELECT * 
       FROM {$this->table}
-      $searchCondition
+      $whereSql
       ORDER BY $orderBy $sortOrder
       LIMIT :limit OFFSET :offset
     ";
 
     $stmt = $this->pdo->prepare($sql);
 
-    if (!empty($search)) {
-      $stmt->bindValue(":search_table", "%$search%", PDO::PARAM_STR);
-      $stmt->bindValue(":search_old_data", "%$search%", PDO::PARAM_STR);
-      $stmt->bindValue(":search_new_data", "%$search%", PDO::PARAM_STR);
-      $stmt->bindValue(":search_action_type", "%$search%", PDO::PARAM_STR);
-      $stmt->bindValue(":search_record_id", "%$search%", PDO::PARAM_STR);
+    foreach ($params as $key => $value) {
+      $stmt->bindValue($key, $value, PDO::PARAM_STR);
     }
 
     $stmt->bindValue(":limit", $limit, PDO::PARAM_INT);
@@ -82,23 +102,38 @@ class AuditModel
     return $stmt->fetchAll();
   }
 
-  public function getTotalCount($search = "")
+  public function getTotalCount($search = "", $table = "", $actionType = "")
   {
-    $searchCondition = "";
+    $conditions = [];
+    $params = [];
+
     if (!empty($search)) {
-      $searchCondition = "WHERE table_name LIKE :search_table 
-                          OR action_type LIKE :search_action_type 
-                          OR record_id LIKE :search_record_id";
+      $conditions[] = "(table_name LIKE :search_table 
+        OR action_type LIKE :search_action_type 
+        OR record_id LIKE :search_record_id)";
+      $params[':search_table'] = "%$search%";
+      $params[':search_action_type'] = "%$search%";
+      $params[':search_record_id'] = "%$search%";
     }
 
-    $sql = "SELECT COUNT(*) FROM {$this->table} $searchCondition";
+    if (!empty($table)) {
+      $conditions[] = "table_name = :table";
+      $params[':table'] = $table;
+    }
+
+    if (!empty($actionType)) {
+      $conditions[] = "action_type = :action_type";
+      $params[':action_type'] = $actionType;
+    }
+
+    $whereSql = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+
+    $sql = "SELECT COUNT(*) FROM {$this->table} $whereSql";
 
     $stmt = $this->pdo->prepare($sql);
 
-    if (!empty($search)) {
-      $stmt->bindValue(":search_table", "%$search%", PDO::PARAM_STR);
-      $stmt->bindValue(":search_action_type", "%$search%", PDO::PARAM_STR);
-      $stmt->bindValue(":search_record_id", "%$search%", PDO::PARAM_STR);
+    foreach ($params as $key => $value) {
+      $stmt->bindValue($key, $value, PDO::PARAM_STR);
     }
 
     $stmt->execute();
@@ -111,5 +146,20 @@ class AuditModel
     $stmt = $this->pdo->query($sql);
     $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
     return $tables;
+  }
+
+  public function find($id)
+  {
+    $stmt = $this->pdo->prepare("
+      SELECT *
+      FROM {$this->table}
+      WHERE id = :id
+      LIMIT 1
+    ");
+
+    $stmt->bindValue(':id', (int)$id, PDO::PARAM_INT);
+    $stmt->execute();
+
+    return $stmt->fetch();
   }
 }

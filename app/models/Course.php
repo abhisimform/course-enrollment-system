@@ -28,7 +28,6 @@ class CourseModel
         (c.max_seats - COUNT(e.id)) AS available_seats,
 
         eu.id as en_id,
-        -- ✅ Check if current student is enrolled
         MAX(CASE 
             WHEN eu.id IS NOT NULL THEN 1 
             ELSE 0 
@@ -153,10 +152,10 @@ class CourseModel
   public function softDelete($id)
   {
     $stmt = $this->pdo->prepare("
-            UPDATE {$this->table} 
-            SET deleted_at = NOW()
-            WHERE id = :id
-        ");
+      UPDATE {$this->table} 
+      SET deleted_at = NOW()
+      WHERE id = :id
+    ");
 
     return $stmt->execute(['id' => $id]);
   }
@@ -164,10 +163,10 @@ class CourseModel
   public function restore($id)
   {
     $stmt = $this->pdo->prepare("
-            UPDATE {$this->table} 
-            SET deleted_at = NULL
-            WHERE id = :id
-        ");
+      UPDATE {$this->table} 
+      SET deleted_at = NULL
+      WHERE id = :id
+    ");
 
     return $stmt->execute(['id' => $id]);
   }
@@ -175,12 +174,12 @@ class CourseModel
   public function courseNameExists($courseName)
   {
     $stmt = $this->pdo->prepare("
-            SELECT id 
-            FROM {$this->table} 
-            WHERE course_name = :course_name 
-            AND {$this->baseCondition()}
-            LIMIT 1
-        ");
+      SELECT id 
+      FROM {$this->table} 
+      WHERE course_name = :course_name 
+      AND {$this->baseCondition()}
+      LIMIT 1
+    ");
 
     $stmt->execute(['course_name' => $courseName]);
     return $stmt->fetch(PDO::FETCH_ASSOC) ? true : false;
@@ -199,11 +198,11 @@ class CourseModel
   public function getCoursesByInstructor($instructorId)
   {
     $stmt = $this->pdo->prepare("
-        SELECT * 
-        FROM {$this->table} 
-        WHERE instructor_id = :instructor_id 
-        AND {$this->baseCondition()} 
-        ORDER BY id DESC
+      SELECT * 
+      FROM {$this->table} 
+      WHERE instructor_id = :instructor_id 
+      AND {$this->baseCondition()} 
+      ORDER BY id DESC
     ");
 
     $stmt->execute(['instructor_id' => $instructorId]);
@@ -213,10 +212,10 @@ class CourseModel
   public function getAvailableCourses()
   {
     $stmt = $this->pdo->prepare("
-        SELECT * 
-        FROM {$this->table} 
-        WHERE status = 1 
-        AND {$this->baseCondition()}
+      SELECT * 
+      FROM {$this->table} 
+      WHERE status = 1 
+      AND {$this->baseCondition()}
     ");
 
     $stmt->execute();
@@ -226,11 +225,11 @@ class CourseModel
   public function getCourseByName($courseName)
   {
     $stmt = $this->pdo->prepare("
-        SELECT * 
-        FROM {$this->table} 
-        WHERE course_name = :course_name 
-        AND {$this->baseCondition()}
-        LIMIT 1
+      SELECT * 
+      FROM {$this->table} 
+      WHERE course_name = :course_name 
+      AND {$this->baseCondition()}
+      LIMIT 1
     ");
     $stmt->execute(['course_name' => $courseName]);
     return $stmt->fetch(PDO::FETCH_ASSOC);

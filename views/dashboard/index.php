@@ -1,6 +1,6 @@
 <h1>Dashboard</h1>
 <?php
-// dd($_SESSION);
+
 $flash = getFlash(); ?>
 <?php if ($flash): ?>
   <div style="background: green; color:white; padding:10px;">

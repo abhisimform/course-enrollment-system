@@ -6,7 +6,7 @@ require_once BASE_PATH . '/app/models/Permission.php';
 class Permissions extends BaseController
 {
   private $permissionModel;
-  private $userModel; // for assigning permissions to users
+  private $userModel;
   private $rolePermissionsTable = 'role_permissions';
   private $userPermissionsTable = 'user_permissions';
 

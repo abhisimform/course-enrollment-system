@@ -34,10 +34,8 @@
     }
     ?>
 
-    <!-- ✅ Scrollable Container -->
     <div style="max-height:500px; overflow-y:auto; border:1px solid #ccc; border-radius:8px; padding:15px;">
 
-      <!-- ✅ GRID: Multiple groups per row -->
       <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:15px;">
 
         <?php foreach ($groupedPermissions as $group => $permissions): ?>
