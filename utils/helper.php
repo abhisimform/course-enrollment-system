@@ -149,12 +149,29 @@ function getFlash()
   return $flash;
 }
 
-function hasPermission($permission)
+function ensureCsrfToken()
 {
-  return Rbac::has($permission);
+  if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+  }
+
+  return $_SESSION['csrf_token'];
 }
 
-function requirePermission($permission)
+function csrfToken()
 {
-  return Rbac::require($permission);
+  return ensureCsrfToken();
+}
+
+function csrfInput()
+{
+  return '<input type="hidden" name="csrf_token" value="' . e(csrfToken()) . '">';
+}
+
+function isValidCsrfToken($token)
+{
+  $sessionToken = $_SESSION['csrf_token'] ?? '';
+  $submittedToken = is_string($token) ? $token : '';
+
+  return $sessionToken !== '' && $submittedToken !== '' && hash_equals($sessionToken, $submittedToken);
 }

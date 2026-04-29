@@ -16,24 +16,7 @@ class Students extends BaseController
   {
     Rbac::require('student.view_all');
 
-    $currentPage = (int)($_GET['page'] ?? 1);
-    $perPage = 10;
-
-    $search = $_GET['search'] ?? '';
-    $showDeleted = isset($_GET['deleted']);
-
-    $students = $this->studentModel->getStudents($search, $currentPage, $perPage, $showDeleted);
-    $totalStudents = $this->studentModel->countStudents($search, $showDeleted);
-    $totalPages = ceil($totalStudents / $perPage);
-
-    return $this->render('students/index', compact(
-      'students',
-      'currentPage',
-      'perPage',
-      'search',
-      'showDeleted',
-      'totalPages'
-    ));
+    return $this->render('students/index');
   }
 
   public function restore($id)
@@ -51,8 +34,10 @@ class Students extends BaseController
     Rbac::require('student.create');
 
     $errors = [];
+    $this->ensureCsrf();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $this->validateCsrfOrFail();
 
       $name = trim($_POST['name'] ?? '');
       $email = trim($_POST['email'] ?? '');
@@ -60,6 +45,8 @@ class Students extends BaseController
 
       if ($name === '') {
         $errors['name'] = 'Name is required';
+      } elseif (mb_strlen($name) > 100) {
+        $errors['name'] = 'Name must not exceed 100 characters';
       }
 
       if ($email === '') {
@@ -104,8 +91,10 @@ class Students extends BaseController
     }
 
     $errors = [];
+    $this->ensureCsrf();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $this->validateCsrfOrFail();
 
       $name = trim($_POST['name'] ?? '');
       $email = trim($_POST['email'] ?? '');
@@ -113,6 +102,8 @@ class Students extends BaseController
 
       if ($name === '') {
         $errors['name'] = 'Name is required';
+      } elseif (mb_strlen($name) > 100) {
+        $errors['name'] = 'Name must not exceed 100 characters';
       }
 
       if ($email === '') {
@@ -179,15 +170,15 @@ class Students extends BaseController
       $actions = [];
 
       if ($showDeleted) {
-        if (hasPermission('restore_student')) {
+        if (Rbac::has('student.restore')) {
           $actions[] = '<a href="/students/restore/' . (int)$row['id'] . '">Restore</a>';
         }
       } else {
-        if (hasPermission('edit_student')) {
+        if (Rbac::has('student.edit')) {
           $actions[] = '<a href="/students/edit/' . (int)$row['id'] . '">Edit</a>';
         }
 
-        if (hasPermission('delete_student')) {
+        if (Rbac::has('student.delete')) {
           $actions[] = '<a href="/students/delete/' . (int)$row['id'] . '" onclick="return confirm(\'Delete student?\')">Delete</a>';
         }
       }

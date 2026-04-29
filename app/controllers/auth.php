@@ -23,23 +23,6 @@ class Auth extends BaseController
     return $this->redirect("/auth/login");
   }
 
-  private function ensureCsrf()
-  {
-    if (empty($_SESSION['csrf_token'])) {
-      $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
-  }
-
-  private function validateCsrf()
-  {
-    if (
-      !isset($_POST['csrf_token']) ||
-      !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])
-    ) {
-      die("Invalid CSRF token");
-    }
-  }
-
   public function login()
   {
     redirectIfLoggedIn();
@@ -50,7 +33,7 @@ class Auth extends BaseController
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-      $this->validateCsrf();
+      $this->validateCsrfOrFail();
 
       $email = trim($_POST['email'] ?? '');
       $password = $_POST['password'] ?? '';
@@ -144,34 +127,6 @@ class Auth extends BaseController
     exit;
   }
 
-  public function register()
-  {
-    redirectIfLoggedIn();
-
-    $this->ensureCsrf();
-
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-      $this->validateCsrf();
-
-      $rules = AuthValidator::register();
-
-      if (!$this->validator->validate($_POST, $rules)) {
-        $errors = $this->validator->errors();
-
-        return $this->redirect("/auth/register");
-      }
-
-      $this->authModel->register($_POST);
-
-      setFlash('success', 'Registered successfully! Please login.');
-
-      return $this->redirect("/auth/login");
-    }
-
-    return $this->render('auth/register', []);
-  }
-
   public function logout()
   {
     $_SESSION = [];
@@ -201,7 +156,7 @@ class Auth extends BaseController
     $errors = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $this->validateCsrf();
+      $this->validateCsrfOrFail();
 
       $formType = $_POST['form_type'] ?? 'profile';
 
