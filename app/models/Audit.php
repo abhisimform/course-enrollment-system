@@ -162,4 +162,99 @@ class AuditModel
 
     return $stmt->fetch();
   }
+
+  public function getDataTableRecords($start, $length, $search, $orderBy, $orderDir)
+  {
+    $params = [];
+    $where = "";
+
+    if (!empty($search)) {
+      $where = "WHERE table_name LIKE :search 
+        OR action_type LIKE :search 
+        OR record_id LIKE :search";
+
+      $params[':search'] = "%$search%";
+    }
+
+    $sql = "
+      SELECT * FROM {$this->table}
+      $where
+      ORDER BY $orderBy $orderDir
+      LIMIT :start, :length
+    ";
+
+    $stmt = $this->pdo->prepare($sql);
+
+    foreach ($params as $key => $value) {
+      $stmt->bindValue($key, $value, PDO::PARAM_STR);
+    }
+
+    $stmt->bindValue(':start', (int)$start, PDO::PARAM_INT);
+    $stmt->bindValue(':length', (int)$length, PDO::PARAM_INT);
+
+    $stmt->execute();
+
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // format data for frontend
+    foreach ($rows as &$row) {
+      $row['id'] = "<a href='/audit/view/" . $row['id'] . "'>#" . $row['id'] . "</a>";
+      $row['old_data'] = $this->formatLogData($row['old_data']);
+      $row['new_data'] = $this->formatLogData($row['new_data']);
+      $row['changed_at'] = date('d M Y H:i', strtotime($row['changed_at']));
+      $row['action_type'] = $this->formatAction($row['action_type']);
+    }
+
+    return $rows;
+  }
+
+  public function getFilteredCount($search)
+  {
+    $params = [];
+    $where = "";
+
+    if (!empty($search)) {
+      $where = "WHERE table_name LIKE :search 
+      OR action_type LIKE :search 
+      OR record_id LIKE :search";
+
+      $params[':search'] = "%$search%";
+    }
+
+    $sql = "SELECT COUNT(*) FROM {$this->table} $where";
+
+    $stmt = $this->pdo->prepare($sql);
+
+    foreach ($params as $key => $value) {
+      $stmt->bindValue($key, $value, PDO::PARAM_STR);
+    }
+
+    $stmt->execute();
+
+    return $stmt->fetchColumn();
+  }
+
+  private function formatLogData($data)
+  {
+    if (empty($data)) {
+      return '<span style="color:gray;">-</span>';
+    }
+
+    $items = explode(',', $data);
+    $html = '<ul style="margin:0;padding-left:15px;">';
+
+    foreach ($items as $item) {
+      $html .= '<li>' . htmlspecialchars(trim($item)) . '</li>';
+    }
+
+    $html .= '</ul>';
+
+    return $html;
+  }
+
+  private function formatAction($action)
+  {
+    $color = $action === 'INSERT' ? 'green' : ($action === 'UPDATE' ? 'orange' : 'red');
+    return "<span class='badge badge-$color'>$action</span>";
+  }
 }

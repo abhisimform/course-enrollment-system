@@ -2,6 +2,43 @@
 
 function dd(...$vars)
 {
+  $isAjax = (
+    !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
+  ) || (
+    isset($_SERVER['HTTP_ACCEPT']) &&
+    strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false
+  );
+
+  // Get variable names from calling line
+  $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
+  $line = file($backtrace[0]['file'])[$backtrace[0]['line'] - 1] ?? '';
+  preg_match('/dd\((.+)\)/', $line, $matches);
+  $names = isset($matches[1]) ? explode(',', $matches[1]) : [];
+
+  // =========================
+  // AJAX / API RESPONSE
+  // =========================
+  if ($isAjax) {
+    header('Content-Type: application/json');
+
+    $output = [];
+
+    foreach ($vars as $index => $var) {
+      $name = isset($names[$index]) ? trim($names[$index]) : "var_" . ($index + 1);
+      $output[$name] = $var;
+    }
+
+    echo json_encode([
+      'debug' => $output
+    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+    die();
+  }
+
+  // =========================
+  // NORMAL HTML RESPONSE
+  // =========================
   echo '
     <style>
       .dd-container {
@@ -20,7 +57,7 @@ function dd(...$vars)
         font-weight: bold;
       }
       .dd-content {
-        /* display: none; */
+        display: none;
         padding: 10px;
         border-top: 1px solid #ddd;
         background: #fff;
@@ -28,28 +65,24 @@ function dd(...$vars)
     </style>
 
     <div class="dd-container">
-  ';
+    ';
 
   foreach ($vars as $index => $var) {
-    $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
-    $line = file($backtrace[0]['file'])[$backtrace[0]['line'] - 1];
-    preg_match('/dd\((.+)\)/', $line, $matches);
-
-    $names = isset($matches[1]) ? explode(',', $matches[1]) : [];
     $name = isset($names[$index]) ? trim($names[$index]) : "Variable " . ($index + 1);
 
     echo '
-      <div class="dd-accordion">
-        <div class="dd-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === \'block\' ? \'none\' : \'block\'">
-          ' . htmlspecialchars($name) . '
-        </div>
-        <div class="dd-content">
-          <pre>';
+        <div class="dd-accordion">
+            <div class="dd-header"
+                 onclick="this.nextElementSibling.style.display =
+                 this.nextElementSibling.style.display === \'block\' ? \'none\' : \'block\'">
+                ' . htmlspecialchars($name) . '
+            </div>
+            <div class="dd-content">
+                <pre>';
     print_r($var);
-    echo '
-          </pre>
-        </div>
-      </div>';
+    echo '</pre>
+            </div>
+        </div>';
   }
 
   echo '</div>';
@@ -60,6 +93,11 @@ function dd(...$vars)
 function sanitize($data)
 {
   return htmlspecialchars(trim((string)$data), ENT_QUOTES, 'UTF-8');
+}
+
+function e($data)
+{
+  return htmlspecialchars((string)$data, ENT_QUOTES, 'UTF-8');
 }
 
 function isLoggedIn()

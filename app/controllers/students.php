@@ -15,7 +15,7 @@ class Students extends BaseController
   public function index()
   {
     Rbac::require('student.view_all');
-    
+
     $currentPage = (int)($_GET['page'] ?? 1);
     $perPage = 10;
 
@@ -38,9 +38,7 @@ class Students extends BaseController
 
   public function restore($id)
   {
-    if (!Rbac::has('restore_student')) {
-      die("Access denied");
-    }
+    Rbac::require('student.restore');
 
     $this->studentModel->restore($id);
     setFlash('success', 'Student restored');
@@ -50,9 +48,7 @@ class Students extends BaseController
 
   public function create()
   {
-    if (!Rbac::has('create_student')) {
-      die("Access denied");
-    }
+    Rbac::require('student.create');
 
     $errors = [];
 
@@ -97,23 +93,9 @@ class Students extends BaseController
     return $this->render('students/create', compact('errors'));
   }
 
-  public function self()
-  {
-    $id = $_SESSION['user']['id'];
-    $student = $this->studentModel->find($id);
-
-    if (!$student) {
-      die("Student not found");
-    }
-
-    return $this->render('students/self', compact('student'));
-  }
-
   public function edit($id)
   {
-    if (!Rbac::has('edit_student')) {
-      die("Access denied");
-    }
+    Rbac::require('student.edit');
 
     $student = $this->studentModel->find($id);
 
@@ -155,7 +137,7 @@ class Students extends BaseController
 
         setFlash('success', 'Student updated');
 
-        return $this->redirect("/students/view/$id");
+        return $this->redirect("/students/edit/$id");
       }
     }
 
@@ -164,14 +146,61 @@ class Students extends BaseController
 
   public function delete($id)
   {
-    if (!Rbac::has('delete_student')) {
-      die("Access denied");
-    }
+    Rbac::require('student.delete');
 
     $this->studentModel->softDelete($id);
 
     setFlash('success', 'Student deleted');
 
     return $this->redirect("/students");
+  }
+
+  public function ajax()
+  {
+    Rbac::require('student.view_all');
+
+    header('Content-Type: application/json');
+
+    $draw = (int)($_GET['draw'] ?? 1);
+    $start = (int)($_GET['start'] ?? 0);
+    $length = (int)($_GET['length'] ?? 10);
+    $searchParam = $_GET['search'] ?? '';
+    $search = trim(is_array($searchParam) ? ($searchParam['value'] ?? '') : $searchParam);
+    $showDeleted = isset($_GET['deleted']) && $_GET['deleted'] == '1';
+
+    $columnIndex = (int)($_GET['order'][0]['column'] ?? 0);
+    $orderDir = $_GET['order'][0]['dir'] ?? 'desc';
+    $columns = ['id', 'name', 'email'];
+    $orderBy = $columns[$columnIndex] ?? 'id';
+
+    $rows = $this->studentModel->getDataTableRecords($start, $length, $search, $orderBy, $orderDir, $showDeleted);
+
+    foreach ($rows as &$row) {
+      $actions = [];
+
+      if ($showDeleted) {
+        if (hasPermission('restore_student')) {
+          $actions[] = '<a href="/students/restore/' . (int)$row['id'] . '">Restore</a>';
+        }
+      } else {
+        if (hasPermission('edit_student')) {
+          $actions[] = '<a href="/students/edit/' . (int)$row['id'] . '">Edit</a>';
+        }
+
+        if (hasPermission('delete_student')) {
+          $actions[] = '<a href="/students/delete/' . (int)$row['id'] . '" onclick="return confirm(\'Delete student?\')">Delete</a>';
+        }
+      }
+
+      $row['actions'] = implode(' | ', $actions);
+    }
+
+    echo json_encode([
+      'draw' => $draw,
+      'recordsTotal' => $this->studentModel->getDataTableTotalCount($showDeleted),
+      'recordsFiltered' => $this->studentModel->getFilteredCount($search, $showDeleted),
+      'data' => $rows
+    ]);
+    exit;
   }
 }

@@ -184,4 +184,69 @@ class StudentModel
     $stmt->execute(['student_id' => $studentId]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
+
+  public function getDataTableRecords($start, $length, $search, $orderBy, $orderDir, $deleted = false)
+  {
+    $allowedColumns = ['id', 'name', 'email'];
+    $orderBy = in_array($orderBy, $allowedColumns, true) ? $orderBy : 'id';
+    $orderDir = strtoupper($orderDir) === 'ASC' ? 'ASC' : 'DESC';
+
+    $sql = "SELECT id, name, email, deleted_at
+      FROM {$this->table}
+      WHERE role = 'student'";
+
+    $sql .= $deleted ? " AND deleted_at IS NOT NULL" : " AND deleted_at IS NULL";
+
+    if ($search !== '') {
+      $sql .= " AND (name LIKE :search OR email LIKE :search)";
+    }
+
+    $sql .= " ORDER BY {$orderBy} {$orderDir} LIMIT :start, :length";
+
+    $stmt = $this->pdo->prepare($sql);
+
+    if ($search !== '') {
+      $stmt->bindValue(':search', "%{$search}%", PDO::PARAM_STR);
+    }
+
+    $stmt->bindValue(':start', (int)$start, PDO::PARAM_INT);
+    $stmt->bindValue(':length', (int)$length, PDO::PARAM_INT);
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
+
+  public function getFilteredCount($search, $deleted = false)
+  {
+    $sql = "SELECT COUNT(*)
+      FROM {$this->table}
+      WHERE role = 'student'";
+
+    $sql .= $deleted ? " AND deleted_at IS NOT NULL" : " AND deleted_at IS NULL";
+
+    if ($search !== '') {
+      $sql .= " AND (name LIKE :search OR email LIKE :search)";
+    }
+
+    $stmt = $this->pdo->prepare($sql);
+
+    if ($search !== '') {
+      $stmt->bindValue(':search', "%{$search}%", PDO::PARAM_STR);
+    }
+
+    $stmt->execute();
+    return (int)$stmt->fetchColumn();
+  }
+
+  public function getDataTableTotalCount($deleted = false)
+  {
+    $sql = "SELECT COUNT(*)
+      FROM {$this->table}
+      WHERE role = 'student'";
+
+    $sql .= $deleted ? " AND deleted_at IS NOT NULL" : " AND deleted_at IS NULL";
+
+    $stmt = $this->pdo->query($sql);
+    return (int)$stmt->fetchColumn();
+  }
 }

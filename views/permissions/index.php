@@ -13,47 +13,52 @@
   <button type="submit">Search</button>
 </form>
 
-<br>
+<div class="dt-container">
+  <table id="permissionsTable" class="display">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+  </table>
+</div>
 
-<table border="1" cellpadding="10">
-  <tr>
-    <th>ID</th>
-    <th>Name</th>
-    <th>Status</th>
-    <th>Actions</th>
-  </tr>
-
-  <?php foreach ($permissions as $perm): ?>
-    <tr>
-      <td><?= $perm['id'] ?></td>
-      <td><?= htmlspecialchars($perm['name'] ?? '') ?></td>
-      <td><?= $perm['deleted_at'] ? 'Deleted' : 'Active' ?></td>
-      <td>
-        <a href="/permissions/view/<?= $perm['id'] ?>">View</a>
-
-        <?php if (!$perm['deleted_at']): ?>
-          | <a href="/permissions/edit/<?= $perm['id'] ?>">Edit</a>
-          | <a href="/permissions/delete/<?= $perm['id'] ?>"
-            onclick="return confirm('Delete this permission?')">Delete</a>
-        <?php else: ?>
-          | <a href="/permissions/restore/<?= $perm['id'] ?>"
-            onclick="return confirm('Restore this permission?')">Restore</a>
-        <?php endif; ?>
-      </td>
-    </tr>
-  <?php endforeach; ?>
-</table>
-
-<?php if ($totalPages > 1): ?>
-  <div>
-    <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-      <?php if ($i == $page): ?>
-        <strong><?= $i ?></strong>
-      <?php else: ?>
-        <a href="/permissions?page=<?= $i ?>&q=<?= urlencode($_GET['q'] ?? '') ?>">
-          <?= $i ?>
-        </a>
-      <?php endif; ?>
-    <?php endfor; ?>
-  </div>
-<?php endif; ?>
+<script>
+  $(document).ready(function() {
+    $('#permissionsTable').DataTable({
+      processing: true,
+      serverSide: true,
+      scrollY: 420,
+      scrollX: true,
+      scrollCollapse: true,
+      search: {
+        search: <?= json_encode($_GET['q'] ?? '') ?>
+      },
+      ajax: '/permissions/ajax?<?= htmlspecialchars(http_build_query($_GET), ENT_QUOTES) ?>',
+      columns: [{
+          data: 'id'
+        },
+        {
+          data: 'name'
+        },
+        {
+          data: 'status',
+          orderable: false
+        },
+        {
+          data: 'actions',
+          orderable: false,
+          searchable: false
+        }
+      ],
+      order: [
+        [1, 'asc']
+      ],
+      pageLength: 10,
+      lengthMenu: [10, 25, 50, 100]
+    });
+  });
+</script>

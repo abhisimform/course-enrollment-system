@@ -17,6 +17,8 @@ class Enrollments extends BaseController
   {
     requireLogin();
 
+    Rbac::require('enrollment.view');
+
     $user = $_SESSION['user'];
     $role = $user['role'];
 
@@ -28,8 +30,7 @@ class Enrollments extends BaseController
 
 
     if ($role === 'admin') {
-
-      Rbac::require('enrollment.view');
+      Rbac::require('enrollment.view_all');
 
       $enrollments = $this->enrollmentModel->getAll($filters, $limit, $offset);
       $total = $this->enrollmentModel->countAll($filters);
@@ -54,7 +55,7 @@ class Enrollments extends BaseController
 
   public function enroll()
   {
-    Rbac::has('enrollment.create');
+    Rbac::require('enrollment.create');
 
     $studentId = $_SESSION['user']['id'];
     $courseId = $_POST['course_id'];
@@ -66,7 +67,7 @@ class Enrollments extends BaseController
 
   public function cancel()
   {
-    Rbac::has('enrollment.update');
+    Rbac::require('enrollment.update');
 
     $id = $_POST['id'] ?? null;
 
@@ -79,7 +80,7 @@ class Enrollments extends BaseController
 
   public function delete()
   {
-    Rbac::has('enrollment.delete');
+    Rbac::require('enrollment.delete');
 
     $id = $_POST['id'] ?? null;
 
@@ -88,5 +89,54 @@ class Enrollments extends BaseController
     }
 
     return $this->redirect('/enrollments');
+  }
+
+  public function ajax()
+  {
+    Rbac::require('enrollment.view');
+
+    header('Content-Type: application/json');
+
+    $draw = (int)($_GET['draw'] ?? 1);
+    $start = (int)($_GET['start'] ?? 0);
+    $length = (int)($_GET['length'] ?? 10);
+    $searchParam = $_GET['search'] ?? '';
+    $search = trim(is_array($searchParam) ? ($searchParam['value'] ?? '') : $searchParam);
+
+    $user = $_SESSION['user'];
+    $isAdmin = $user['role'] === 'admin';
+
+    $columnIndex = (int)($_GET['order'][0]['column'] ?? 0);
+    $orderDir = $_GET['order'][0]['dir'] ?? 'desc';
+    $columns = $isAdmin
+      ? ['e.id', 'u.name', 'c.course_name', 'e.status', 'e.enrolled_date']
+      : ['e.id', 'c.course_name', 'e.status', 'e.enrolled_date'];
+    $orderBy = $columns[$columnIndex] ?? 'e.id';
+
+    $filters = [
+      'status' => $_GET['status'] ?? ''
+    ];
+
+    $studentId = $isAdmin ? null : (int)$user['id'];
+    $rows = $this->enrollmentModel->getDataTableRecords($start, $length, $search, $orderBy, $orderDir, $filters, $studentId);
+
+    foreach ($rows as &$row) {
+      $row['status_label'] = strtolower((string)$row['status']) === 'active'
+        ? '<span class="dt-badge dt-badge-success">Active</span>'
+        : '<span class="dt-badge dt-badge-warning">Cancelled</span>';
+
+      $row['actions'] = '';
+      if (((!$isAdmin) || hasPermission('enrollment.update')) && strtolower((string)$row['status']) === 'active') {
+        $row['actions'] = '<form method="POST" action="/enrollments/cancel" class="dt-inline-form"><input type="hidden" name="id" value="' . (int)$row['id'] . '"><button type="submit" class="dt-btn dt-btn-danger">Cancel</button></form>';
+      }
+    }
+
+    echo json_encode([
+      'draw' => $draw,
+      'recordsTotal' => $this->enrollmentModel->getDataTableTotalCount($filters, $studentId),
+      'recordsFiltered' => $this->enrollmentModel->getFilteredCount($search, $filters, $studentId),
+      'data' => $rows
+    ]);
+    exit;
   }
 }

@@ -1,9 +1,28 @@
 <?php
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'enrollment_db');
-define('DB_USER', 'root');
-define('DB_PASS', 'Root@123');
+function envOrDefault($key, $default)
+{
+  $value = getenv($key);
+  if ($value === false || $value === '') {
+    return $default;
+  }
+
+  return $value;
+}
+
+// define('DB_HOST', envOrDefault('DB_HOST', '127.0.0.1'));
+// define('DB_PORT', envOrDefault('DB_PORT', '3306'));
+// define('DB_NAME', envOrDefault('DB_NAME', 'enrollment_db'));
+// define('DB_USER', envOrDefault('DB_USER', 'root'));
+// define('DB_PASS', envOrDefault('DB_PASS', 'Root@123'));
+// define('DB_SOCKET', envOrDefault('DB_SOCKET', ''));
+
+define('DB_HOST', getenv('DB_HOST') !== false ? getenv('DB_HOST') : 'localhost');
+define('DB_PORT', getenv('DB_PORT') !== false ? getenv('DB_PORT') : '3006');
+define('DB_NAME', getenv('DB_NAME') !== false ? getenv('DB_NAME') : 'enrollment_db');
+define('DB_USER', getenv('DB_USER') !== false ? getenv('DB_USER') : 'root');
+define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : 'Root@123');
+define('DB_SOCKET', getenv('DB_SOCKET') !== false ? getenv('DB_SOCKET') : '');
 
 function getPDO()
 {
@@ -14,7 +33,11 @@ function getPDO()
   }
 
   try {
-    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+    $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+
+    if (DB_SOCKET !== '') {
+      $dsn = "mysql:unix_socket=" . DB_SOCKET . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+    }
 
     $pdo = new PDO(
       $dsn,

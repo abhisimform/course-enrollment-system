@@ -71,7 +71,7 @@ class Permissions extends BaseController
 
   public function delete($id)
   {
-    $this->permissionModel->softDelete($id);
+    $this->permissionModel->hardDelete($id);
 
     return $this->redirect('/permissions');
   }
@@ -199,7 +199,42 @@ class Permissions extends BaseController
 
       $this->permissionModel->assignToUser($userId, $permissionIds);
 
-      return $this->redirect("/permissions/users?user_id=' . $userId");
+      return $this->redirect("/permissions/users?user_id=" . $userId);
     }
+  }
+
+  public function ajax()
+  {
+    header('Content-Type: application/json');
+
+    $draw = (int)($_GET['draw'] ?? 1);
+    $start = (int)($_GET['start'] ?? 0);
+    $length = (int)($_GET['length'] ?? 10);
+    $searchParam = $_GET['search'] ?? ($_GET['q'] ?? '');
+    $search = trim(is_array($searchParam) ? ($searchParam['value'] ?? '') : $searchParam);
+
+    $columnIndex = (int)($_GET['order'][0]['column'] ?? 1);
+    $orderDir = $_GET['order'][0]['dir'] ?? 'asc';
+    $columns = ['id', 'name', 'deleted_at'];
+    $orderBy = $columns[$columnIndex] ?? 'name';
+
+    $rows = $this->permissionModel->getDataTableRecords($start, $length, $search, $orderBy, $orderDir);
+
+    foreach ($rows as &$row) {
+      $actions = [];
+      $actions[] = '<a href="/permissions/edit/' . (int)$row['id'] . '">Edit</a>';
+      $actions[] = '<a href="/permissions/delete/' . (int)$row['id'] . '" onclick="return confirm(\'Delete this permission?\')">Delete</a>';
+
+      $row['status'] = $row['deleted_at'] ? 'Deleted' : 'Active';
+      $row['actions'] = implode(' | ', $actions);
+    }
+
+    echo json_encode([
+      'draw' => $draw,
+      'recordsTotal' => $this->permissionModel->getDataTableTotalCount(),
+      'recordsFiltered' => $this->permissionModel->getFilteredCount($search),
+      'data' => $rows
+    ]);
+    exit;
   }
 }

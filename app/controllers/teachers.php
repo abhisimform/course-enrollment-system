@@ -14,6 +14,8 @@ class Teachers extends BaseController
 
   public function index()
   {
+    Rbac::require('teacher.view_all');
+
     $currentPage = (int)($_GET['page'] ?? 1);
     $perPage = 10;
 
@@ -37,9 +39,7 @@ class Teachers extends BaseController
 
   public function restore($id)
   {
-    if (!Rbac::has('restore_teacher')) {
-      die("Access denied");
-    }
+    Rbac::require('teacher.restore');
 
     $this->teacherModel->restore($id);
     setFlash('success', 'Teacher restored');
@@ -49,9 +49,7 @@ class Teachers extends BaseController
 
   public function create()
   {
-    if (!Rbac::has('create_teacher')) {
-      die("Access denied");
-    }
+    Rbac::require('teacher.create');
 
     $errors = [];
 
@@ -96,22 +94,9 @@ class Teachers extends BaseController
     return $this->render('teachers/create', compact('errors'));
   }
 
-  public function view($id)
-  {
-    $teacher = $this->teacherModel->find($id);
-
-    if (!$teacher) {
-      die("Teacher not found");
-    }
-
-    return $this->render('teachers/view', compact('teacher'));
-  }
-
   public function edit($id)
   {
-    if (!Rbac::has('edit_teacher')) {
-      die("Access denied");
-    }
+    Rbac::require('teacher.edit');
 
     $teacher = $this->teacherModel->find($id);
 
@@ -142,10 +127,6 @@ class Teachers extends BaseController
         $errors['email'] = 'Email already in use';
       }
 
-      if ($password !== '' && strlen($password) < 6) {
-        $errors['password'] = 'Password must be at least 6 characters';
-      }
-
       if (empty($errors)) {
 
         $this->teacherModel->update($id, [
@@ -165,14 +146,65 @@ class Teachers extends BaseController
 
   public function delete($id)
   {
-    if (!Rbac::has('delete_teacher')) {
-      die("Access denied");
-    }
+    Rbac::require('teacher.delete');
 
     $this->teacherModel->softDelete($id);
 
     setFlash('success', 'Teacher deleted');
 
     return $this->redirect("/teachers");
+  }
+
+  public function ajax()
+  {
+    Rbac::require('teacher.view_all');
+
+    header('Content-Type: application/json');
+
+    $draw = (int)($_GET['draw'] ?? 1);
+    $start = (int)($_GET['start'] ?? 0);
+    $length = (int)($_GET['length'] ?? 10);
+    $searchParam = $_GET['search'] ?? '';
+    $search = trim(is_array($searchParam) ? ($searchParam['value'] ?? '') : $searchParam);
+    $showDeleted = isset($_GET['deleted']) && $_GET['deleted'] == '1';
+
+    $columnIndex = (int)($_GET['order'][0]['column'] ?? 0);
+    $orderDir = $_GET['order'][0]['dir'] ?? 'desc';
+    $columns = ['id', 'name', 'email'];
+    $orderBy = $columns[$columnIndex] ?? 'id';
+
+    $rows = $this->teacherModel->getDataTableRecords($start, $length, $search, $orderBy, $orderDir, $showDeleted);
+
+    foreach ($rows as &$row) {
+      $actions = [];
+
+      if ($showDeleted) {
+        if (hasPermission('restore_teacher')) {
+          $actions[] = '<a href="/teachers/restore/' . (int)$row['id'] . '">Restore</a>';
+        }
+      } else {
+        if (hasPermission('edit_teacher')) {
+          $actions[] = '<a href="/teachers/edit/' . (int)$row['id'] . '">Edit</a>';
+        }
+
+        if (hasPermission('delete_teacher')) {
+          $actions[] = '<a href="/teachers/delete/' . (int)$row['id'] . '" onclick="return confirm(\'Delete teacher?\')">Delete</a>';
+        }
+      }
+
+      if (method_exists($this, 'view')) {
+        $actions[] = '<a href="/teachers/view/' . (int)$row['id'] . '">View</a>';
+      }
+
+      $row['actions'] = implode(' | ', $actions);
+    }
+
+    echo json_encode([
+      'draw' => $draw,
+      'recordsTotal' => $this->teacherModel->getDataTableTotalCount($showDeleted),
+      'recordsFiltered' => $this->teacherModel->getFilteredCount($search, $showDeleted),
+      'data' => $rows
+    ]);
+    exit;
   }
 }

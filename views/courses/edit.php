@@ -1,11 +1,12 @@
 <h2>Edit Course</h2>
 
-<?php if ($msg = getFlash('error')): ?>
-  <p style="color:red;"><?= htmlspecialchars($msg) ?></p>
-<?php endif; ?>
+<?php
 
-<?php if ($msg = getFlash('success')): ?>
-  <p style="color:green;"><?= htmlspecialchars($msg) ?></p>
+$flash = getFlash(); ?>
+<?php if ($flash): ?>
+  <div style="background: green; color:white; padding:10px;">
+    <?= $flash['message'] ?>
+  </div>
 <?php endif; ?>
 
 <form method="POST" action="/courses/edit/<?= $course['id'] ?>">

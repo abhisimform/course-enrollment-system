@@ -63,6 +63,7 @@ class TeacherModel
       WHERE {$this->baseCondition()}
       ORDER BY id DESC
     ");
+
     $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
   }
@@ -76,6 +77,7 @@ class TeacherModel
       AND {$this->baseCondition()}
       LIMIT 1
     ");
+    
     $stmt->execute(['id' => $id]);
     return $stmt->fetch(PDO::FETCH_ASSOC);
   }
@@ -86,6 +88,7 @@ class TeacherModel
       INSERT INTO {$this->table} (name, email, password, role)
       VALUES (:name, :email, :password, 'teacher')
     ");
+
     return $stmt->execute([
       'name' => $data['name'],
       'email' => $data['email'],
@@ -100,6 +103,7 @@ class TeacherModel
       SET name = :name, email = :email, updated_at = NOW()
       WHERE id = :id AND {$this->baseCondition()}
     ");
+
     return $stmt->execute([
       'id' => $id,
       'name' => $data['name'],
@@ -115,6 +119,7 @@ class TeacherModel
       WHERE id = :id
       AND role = 'teacher'
     ");
+
     return $stmt->execute(['id' => $id]);
   }
 
@@ -126,6 +131,7 @@ class TeacherModel
       WHERE id = :id
       AND role = 'teacher'
     ");
+
     return $stmt->execute(['id' => $id]);
   }
 
@@ -138,6 +144,7 @@ class TeacherModel
       AND {$this->baseCondition()}
       LIMIT 1
     ");
+
     $stmt->execute(['email' => $email]);
     return $stmt->fetch(PDO::FETCH_ASSOC) ? true : false;
   }
@@ -149,6 +156,72 @@ class TeacherModel
       FROM {$this->table} 
       WHERE {$this->baseCondition()}
     ");
+    
     return $stmt->fetch()['total'];
+  }
+
+  public function getDataTableRecords($start, $length, $search, $orderBy, $orderDir, $deleted = false)
+  {
+    $allowedColumns = ['id', 'name', 'email'];
+    $orderBy = in_array($orderBy, $allowedColumns, true) ? $orderBy : 'id';
+    $orderDir = strtoupper($orderDir) === 'ASC' ? 'ASC' : 'DESC';
+
+    $sql = "SELECT id, name, email, deleted_at
+      FROM {$this->table}
+      WHERE role = 'teacher'";
+
+    $sql .= $deleted ? " AND deleted_at IS NOT NULL" : " AND deleted_at IS NULL";
+
+    if ($search !== '') {
+      $sql .= " AND (name LIKE :search OR email LIKE :search)";
+    }
+
+    $sql .= " ORDER BY {$orderBy} {$orderDir} LIMIT :start, :length";
+
+    $stmt = $this->pdo->prepare($sql);
+
+    if ($search !== '') {
+      $stmt->bindValue(':search', "%{$search}%", PDO::PARAM_STR);
+    }
+
+    $stmt->bindValue(':start', (int)$start, PDO::PARAM_INT);
+    $stmt->bindValue(':length', (int)$length, PDO::PARAM_INT);
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
+
+  public function getFilteredCount($search, $deleted = false)
+  {
+    $sql = "SELECT COUNT(*)
+      FROM {$this->table}
+      WHERE role = 'teacher'";
+
+    $sql .= $deleted ? " AND deleted_at IS NOT NULL" : " AND deleted_at IS NULL";
+
+    if ($search !== '') {
+      $sql .= " AND (name LIKE :search OR email LIKE :search)";
+    }
+
+    $stmt = $this->pdo->prepare($sql);
+
+    if ($search !== '') {
+      $stmt->bindValue(':search', "%{$search}%", PDO::PARAM_STR);
+    }
+
+    $stmt->execute();
+    return (int)$stmt->fetchColumn();
+  }
+
+  public function getDataTableTotalCount($deleted = false)
+  {
+    $sql = "SELECT COUNT(*)
+      FROM {$this->table}
+      WHERE role = 'teacher'";
+
+    $sql .= $deleted ? " AND deleted_at IS NOT NULL" : " AND deleted_at IS NULL";
+
+    $stmt = $this->pdo->query($sql);
+    return (int)$stmt->fetchColumn();
   }
 }

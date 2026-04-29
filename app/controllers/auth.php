@@ -85,7 +85,7 @@ class Auth extends BaseController
         return $this->render('auth/login', [
           'errors' => $errors,
           'old' => ['email' => $email]
-        ], 'public');
+        ]);
       }
 
       session_regenerate_id(true);
@@ -105,13 +105,13 @@ class Auth extends BaseController
       return $this->redirect('/dashboard');
     }
 
-    return $this->render('auth/login', [], 'public');
+    return $this->render('auth/login', []);
   }
 
   public function captcha()
   {
-    $code = substr(str_shuffle('123'), 0, 5);
     $code = substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ23456789'), 0, 5);
+    $code = substr(str_shuffle('1'), 0, 5);
     $_SESSION['captcha_code'] = $code;
 
     header('Content-type: image/png');
@@ -169,16 +169,125 @@ class Auth extends BaseController
       return $this->redirect("/auth/login");
     }
 
-    return $this->render('auth/register', [], 'public');
+    return $this->render('auth/register', []);
   }
 
   public function logout()
   {
-    session_start();
-
     $_SESSION = [];
     session_destroy();
 
     return $this->redirect("/auth/login");
+  }
+
+  public function profile()
+  {
+    requireLogin();
+    
+    Rbac::require('profile.view');
+
+    $this->layout = 'main';
+    $this->ensureCsrf();
+
+    $userId = $_SESSION['user']['id'];
+
+    $profile = $this->authModel->findUser($userId);
+
+    if (!$profile) {
+      setFlash('error', 'Profile not found');
+      return $this->redirect('/dashboard');
+    }
+
+    $errors = [];
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $this->validateCsrf();
+
+      $formType = $_POST['form_type'] ?? 'profile';
+
+      if ($formType === 'password') {
+        $currentPassword = $_POST['current_password'] ?? '';
+        $newPassword = $_POST['new_password'] ?? '';
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+
+        if ($currentPassword === '') {
+          $errors['current_password'] = 'Current password is required';
+        }
+
+        if (strlen($newPassword) < 6) {
+          $errors['new_password'] = 'New password must be at least 6 characters';
+        }
+
+        if ($newPassword !== $confirmPassword) {
+          $errors['confirm_password'] = 'Password confirmation does not match';
+        }
+
+        if (empty($errors) && !$this->authModel->changePassword($userId, $currentPassword, $newPassword)) {
+          $errors['current_password'] = 'Current password is incorrect';
+        }
+
+        if (empty($errors)) {
+          setFlash('success', 'Password updated');
+          return $this->redirect('/auth/profile');
+        }
+      } else {
+        Rbac::require('profile.edit');
+
+        $name = trim($_POST['name'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
+        $enrolledOn = trim($_POST['enrolled_on'] ?? '');
+
+        if ($name === '') {
+          $errors['name'] = 'Name is required';
+        }
+
+        if ($email === '') {
+          $errors['email'] = 'Email is required';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+          $errors['email'] = 'Invalid email address';
+        } elseif ($this->authModel->emailExistsForOtherUser($email, $userId)) {
+          $errors['email'] = 'Email is already in use';
+        }
+
+        if ($phone !== '' && !preg_match('/^[0-9+\\-\\s]{7,20}$/', $phone)) {
+          $errors['phone'] = 'Phone number format is invalid';
+        }
+
+        if ($enrolledOn !== '' && !strtotime($enrolledOn)) {
+          $errors['enrolled_on'] = 'Enrolled date is invalid';
+        }
+
+        if (empty($errors)) {
+          $beforeProfile = [
+            'name' => $profile['name'],
+            'email' => $profile['email'],
+            'phone' => $profile['phone'] ?? null,
+            'enrolled_on' => $profile['enrolled_on'] ?? null
+          ];
+          $afterProfile = [
+            'name' => $name,
+            'email' => $email,
+            'phone' => $phone,
+            'enrolled_on' => $enrolledOn
+          ];
+
+          $this->authModel->updateProfile($userId, [
+            'name' => $name,
+            'email' => $email,
+            'role' => $profile['role'],
+            'phone' => $phone,
+            'enrolled_on' => $enrolledOn
+          ]);
+
+          $_SESSION['user']['name'] = $name;
+
+          setFlash('success', 'Profile updated');
+          return $this->redirect('/auth/profile');
+        }
+      }
+    }
+
+    return $this->render('auth/profile', compact('profile', 'errors'));
   }
 }

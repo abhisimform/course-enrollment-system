@@ -38,7 +38,7 @@ class PermissionModel
     $stmt = $this->pdo->prepare($sql);
 
     if (!empty($search)) {
-      $stmt->bindValue(':search', $search, PDO::PARAM_STR);
+      $stmt->bindValue(':search', "%$search%", PDO::PARAM_STR);
     }
 
     $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
@@ -132,7 +132,6 @@ class PermissionModel
       $deletePermission = $this->pdo->prepare("
         DELETE FROM {$this->table}
         WHERE id = ?
-        AND deleted_at IS NOT NULL
       ");
       $deletePermission->execute([$id]);
 
@@ -158,106 +157,119 @@ class PermissionModel
   {
     $this->pdo->beginTransaction();
 
-    $stmt = $this->pdo->prepare("
-      SELECT permission_id 
-      FROM {$this->rolePermissionsTable} 
-      WHERE role = ?
-    ");
-    $stmt->execute([$role]);
-
-    $existing = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'permission_id');
-
-    $newPermissionIds = array_map('intval', $newPermissionIds);
-    $existing = array_map('intval', $existing);
-
-    $toInsert = array_diff($newPermissionIds, $existing);
-    $toDelete = array_diff($existing, $newPermissionIds);
-
-    if (!empty($toDelete)) {
-      $placeholders = implode(',', array_fill(0, count($toDelete), '?'));
-
+    try {
       $stmt = $this->pdo->prepare("
-        DELETE FROM {$this->rolePermissionsTable}
+        SELECT permission_id 
+        FROM {$this->rolePermissionsTable} 
         WHERE role = ?
-          AND permission_id IN ($placeholders)
       ");
+      $stmt->execute([$role]);
 
-      $stmt->execute(array_merge([$role], $toDelete));
-    }
+      $existing = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'permission_id');
 
-    if (!empty($toInsert)) {
+      $newPermissionIds = array_map('intval', $newPermissionIds);
+      $existing = array_map('intval', $existing);
 
-      $placeholders = [];
-      $values = [];
+      $toInsert = array_diff($newPermissionIds, $existing);
+      $toDelete = array_diff($existing, $newPermissionIds);
 
-      foreach ($toInsert as $pid) {
-        $placeholders[] = "(?, ?, NOW())";
-        $values[] = $role;
-        $values[] = $pid;
+      if (!empty($toDelete)) {
+        $placeholders = implode(',', array_fill(0, count($toDelete), '?'));
+        $stmt = $this->pdo->prepare("
+          DELETE FROM {$this->rolePermissionsTable}
+          WHERE role = ?
+            AND permission_id IN ($placeholders)
+        ");
+
+        $stmt->execute(array_merge([$role], $toDelete));
       }
 
-      $sql = "
-      INSERT INTO {$this->rolePermissionsTable} (role, permission_id, created_at)
-      VALUES " . implode(',', $placeholders);
+      if (!empty($toInsert)) {
+        $placeholders = [];
+        $values = [];
 
-      $stmt = $this->pdo->prepare($sql);
-      $stmt->execute($values);
+        foreach ($toInsert as $pid) {
+          $placeholders[] = "(?, ?, NOW())";
+          $values[] = $role;
+          $values[] = $pid;
+        }
+
+        $sql = "INSERT INTO {$this->rolePermissionsTable} (role, permission_id, created_at)
+          VALUES " . implode(',', $placeholders);
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($values);
+      }
+
+      $this->pdo->commit();
+    } catch (Throwable $exception) {
+      if ($this->pdo->inTransaction()) {
+        $this->pdo->rollBack();
+      }
+
+      throw $exception;
     }
-
-    $this->pdo->commit();
   }
 
   public function assignToUser($userId, array $newPermissionIds)
   {
     $this->pdo->beginTransaction();
 
-    $stmt = $this->pdo->prepare("
-      SELECT permission_id 
-      FROM {$this->userPermissionsTable} 
-      WHERE user_id = ?
-    ");
-
-    $stmt->execute([$userId]);
-
-    $existing = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'permission_id');
-
-    $newPermissionIds = array_map('intval', $newPermissionIds);
-    $existing = array_map('intval', $existing);
-
-    $toInsert = array_diff($newPermissionIds, $existing);
-    $toDelete = array_diff($existing, $newPermissionIds);
-
-    if (!empty($toDelete)) {
-      $placeholders = implode(',', array_fill(0, count($toDelete), '?'));
-
+    try {
       $stmt = $this->pdo->prepare("
-        DELETE FROM {$this->userPermissionsTable}
+        SELECT permission_id 
+        FROM {$this->userPermissionsTable} 
         WHERE user_id = ?
-          AND permission_id IN ($placeholders)
       ");
 
-      $stmt->execute(array_merge([$userId], $toDelete));
-    }
+      $stmt->execute([$userId]);
 
-    if (!empty($toInsert)) {
-      $placeholders = [];
-      $values = [];
+      $existing = array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'permission_id');
 
-      foreach ($toInsert as $pid) {
-        $placeholders[] = "(?, ?, NOW())";
-        $values[] = $userId;
-        $values[] = $pid;
+      $newPermissionIds = array_map('intval', $newPermissionIds);
+      $existing = array_map('intval', $existing);
+
+      $toInsert = array_diff($newPermissionIds, $existing);
+      $toDelete = array_diff($existing, $newPermissionIds);
+
+      if (!empty($toDelete)) {
+        $placeholders = implode(',', array_fill(0, count($toDelete), '?'));
+
+        $stmt = $this->pdo->prepare("
+          DELETE FROM {$this->userPermissionsTable}
+          WHERE user_id = ?
+            AND permission_id IN ($placeholders)
+        ");
+
+        $stmt->execute(array_merge([$userId], $toDelete));
       }
 
-      $sql = "INSERT INTO {$this->userPermissionsTable}
-        (user_id, permission_id, created_at)
-        VALUES " . implode(',', $placeholders);
+      if (!empty($toInsert)) {
+        $placeholders = [];
+        $values = [];
 
-      $stmt = $this->pdo->prepare($sql);
-      $stmt->execute($values);
+        foreach ($toInsert as $pid) {
+          $placeholders[] = "(?, ?, NOW())";
+          $values[] = $userId;
+          $values[] = $pid;
+        }
+
+        $sql = "INSERT INTO {$this->userPermissionsTable}
+          (user_id, permission_id, created_at)
+          VALUES " . implode(',', $placeholders);
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($values);
+      }
+
+      $this->pdo->commit();
+    } catch (Throwable $exception) {
+      if ($this->pdo->inTransaction()) {
+        $this->pdo->rollBack();
+      }
+
+      throw $exception;
     }
-
-    $this->pdo->commit();
   }
 
   public function getRolePermissions($role)
@@ -296,5 +308,66 @@ class PermissionModel
 
     $stmt->execute([$userId]);
     return $stmt->fetchColumn();
+  }
+
+  public function getDataTableRecords($start, $length, $search, $orderBy, $orderDir)
+  {
+    $allowedColumns = ['id', 'name', 'deleted_at'];
+    $orderBy = in_array($orderBy, $allowedColumns, true) ? $orderBy : 'name';
+    $orderDir = strtoupper($orderDir) === 'ASC' ? 'ASC' : 'DESC';
+
+    $sql = "SELECT id, name, deleted_at
+      FROM {$this->table}
+      WHERE deleted_at IS NULL";
+
+    if ($search !== '') {
+      $sql .= " AND name LIKE :search";
+    }
+
+    $sql .= " ORDER BY {$orderBy} {$orderDir} LIMIT :start, :length";
+
+    $stmt = $this->pdo->prepare($sql);
+
+    if ($search !== '') {
+      $stmt->bindValue(':search', "%{$search}%", PDO::PARAM_STR);
+    }
+
+    $stmt->bindValue(':start', (int)$start, PDO::PARAM_INT);
+    $stmt->bindValue(':length', (int)$length, PDO::PARAM_INT);
+
+    $stmt->execute();
+
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+  }
+
+  public function getFilteredCount($search)
+  {
+    $sql = "SELECT COUNT(*)
+      FROM {$this->table}
+      WHERE deleted_at IS NULL";
+
+    if ($search !== '') {
+      $sql .= " AND name LIKE :search";
+    }
+
+    $stmt = $this->pdo->prepare($sql);
+
+    if ($search !== '') {
+      $stmt->bindValue(':search', "%{$search}%", PDO::PARAM_STR);
+    }
+
+    $stmt->execute();
+    return (int)$stmt->fetchColumn();
+  }
+
+  public function getDataTableTotalCount()
+  {
+    $stmt = $this->pdo->query("
+      SELECT COUNT(*)
+      FROM {$this->table}
+      WHERE deleted_at IS NULL
+    ");
+
+    return (int)$stmt->fetchColumn();
   }
 }

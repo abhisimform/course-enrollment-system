@@ -71,7 +71,6 @@
 
                 <?php
                 $parts = explode('.', $perm['name']);
-                $action = ucfirst($parts[1] ?? $perm['name']);
                 $action = $perm['name'];
                 ?>
 

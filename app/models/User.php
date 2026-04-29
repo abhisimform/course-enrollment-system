@@ -30,12 +30,12 @@ class UserModel
   public function find($id)
   {
     $stmt = $this->pdo->prepare("
-            SELECT * 
-            FROM {$this->table} 
-            WHERE id = :id
-            AND deleted_at IS NULL
-            LIMIT 1
-        ");
+      SELECT * 
+      FROM {$this->table} 
+      WHERE id = :id
+      AND deleted_at IS NULL
+      LIMIT 1
+    ");
     $stmt->execute(['id' => $id]);
     return $stmt->fetch(PDO::FETCH_ASSOC);
   }
@@ -43,9 +43,10 @@ class UserModel
   public function create($data, $role)
   {
     $stmt = $this->pdo->prepare("
-            INSERT INTO {$this->table} (name, email, password, role)
-            VALUES (:name, :email, :password, :role)
-        ");
+      INSERT INTO {$this->table} (name, email, password, role)
+      VALUES (:name, :email, :password, :role)
+    ");
+
     return $stmt->execute([
       'name'     => $data['name'],
       'email'    => $data['email'],
@@ -57,10 +58,11 @@ class UserModel
   public function softDelete($id)
   {
     $stmt = $this->pdo->prepare("
-            UPDATE {$this->table} 
-            SET deleted_at = NOW()
-            WHERE id = :id
-        ");
+      UPDATE {$this->table} 
+      SET deleted_at = NOW()
+      WHERE id = :id
+    ");
+    
     return $stmt->execute(['id' => $id]);
   }
 

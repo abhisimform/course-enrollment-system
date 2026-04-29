@@ -13,6 +13,8 @@ class Dashboard extends BaseController
   {
     requireLogin();
 
+    Rbac::require('dashboard.view');
+
     $user = $_SESSION['user'];
     $role = $user['role'] ?? null;
 

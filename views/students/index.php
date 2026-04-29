@@ -13,46 +13,51 @@
   <a href="/students/create">Add Student</a>
 <?php endif; ?>
 
-<table border="1" cellpadding="10">
-  <tr>
-    <th>ID</th>
-    <th>Name</th>
-    <th>Email</th>
-    <th>Actions</th>
-  </tr>
+<div class="dt-container">
+  <table id="studentsTable" class="display">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+  </table>
+</div>
 
-  <?php foreach ($students as $s): ?>
-    <tr>
-      <td><?= $s['id'] ?></td>
-      <td><?= htmlspecialchars($s['name']) ?></td>
-      <td><?= htmlspecialchars($s['email']) ?></td>
-      <td>
-        <?php if (!isset($_GET['deleted'])): ?>
-          <?php if (hasPermission('edit_student')): ?>
-            <a href="/students/edit/<?= $s['id'] ?>">Edit</a>
-          <?php endif; ?>
-          <?php if (hasPermission('delete_student')): ?>
-            <a href="/students/delete/<?= $s['id'] ?>"
-              onclick="return confirm('Delete student?')">Delete</a>
-          <?php endif; ?>
-        <?php else: ?>
-          <?php if (hasPermission('restore_student')): ?>
-            <a href="/students/restore/<?= $s['id'] ?>">Restore</a>
-          <?php endif; ?>
-        <?php endif; ?>
-        <a href="/students/view/<?= $s['id'] ?>">View</a>
-      </td>
-    </tr>
-  <?php endforeach; ?>
-
-</table>
-
-<?php if ($totalPages > 1): ?>
-  <div style="margin-top:10px;">
-    <?php for ($p = 1; $p <= $totalPages; $p++): ?>
-      <a href="?page=<?= $p ?><?= isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : '' ?><?= isset($_GET['deleted']) ? '&deleted=1' : '' ?>">
-        <?= $p ?>
-      </a>
-    <?php endfor; ?>
-  </div>
-<?php endif; ?>
+<script>
+  $(document).ready(function() {
+    $('#studentsTable').DataTable({
+      processing: true,
+      serverSide: true,
+      scrollY: 420,
+      scrollX: true,
+      scrollCollapse: true,
+      search: {
+        search: <?= json_encode($_GET['search'] ?? '') ?>
+      },
+      ajax: '/students/ajax?<?= htmlspecialchars(http_build_query($_GET), ENT_QUOTES) ?>',
+      columns: [{
+          data: 'id'
+        },
+        {
+          data: 'name'
+        },
+        {
+          data: 'email'
+        },
+        {
+          data: 'actions',
+          orderable: false,
+          searchable: false
+        }
+      ],
+      order: [
+        [0, 'desc']
+      ],
+      pageLength: 10,
+      lengthMenu: [10, 25, 50, 100]
+    });
+  });
+</script>
