@@ -128,34 +128,6 @@ class Auth extends BaseController
     exit;
   }
 
-  public function register()
-  {
-    redirectIfLoggedIn();
-
-    $this->ensureCsrf();
-
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-      $this->validateCsrfOrFail();
-
-      $rules = AuthValidator::register();
-
-      if (!$this->validator->validate($_POST, $rules)) {
-        $errors = $this->validator->errors();
-
-        return $this->redirect("/auth/register");
-      }
-
-      $this->authModel->register($_POST);
-
-      setFlash('success', 'Registered successfully! Please login.');
-
-      return $this->redirect("/auth/login");
-    }
-
-    return $this->render('auth/register', []);
-  }
-
   public function logout()
   {
     $_SESSION = [];

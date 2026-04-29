@@ -45,28 +45,13 @@ class AuthModel
       SELECT u.id, u.name, u.email, u.role, sp.enrolled_on, sp.phone
       FROM {$this->table} u
       LEFT JOIN student_profiles sp ON sp.user_id = u.id
-      WHERE id = :id
+      WHERE u.id = :id
       AND u.{$this->baseCondition()}
       LIMIT 1
     ");
 
     $stmt->execute(['id' => $id]);
     return $stmt->fetch();
-  }
-
-  public function register($data)
-  {
-    $stmt = $this->pdo->prepare("
-      INSERT INTO {$this->table} (name, email, password, role)
-      VALUES (:name, :email, :password, :role)
-    ");
-
-    return $stmt->execute([
-      'name'     => $data['name'],
-      'email'    => $data['email'],
-      'password' => password_hash($data['password'], PASSWORD_BCRYPT),
-      'role'     => $data['role'] ?? 'teacher'
-    ]);
   }
 
   public function getPermissions($userId)

@@ -98,7 +98,6 @@ class Teachers extends BaseController
 
       $name = trim($_POST['name'] ?? '');
       $email = trim($_POST['email'] ?? '');
-      $password = $_POST['password'] ?? '';
 
       if ($name === '') {
         $errors['name'] = 'Name is required';
@@ -117,16 +116,11 @@ class Teachers extends BaseController
         $errors['email'] = 'Email already in use';
       }
 
-      if ($password !== '' && strlen($password) < 6) {
-        $errors['password'] = 'Password must be at least 6 characters';
-      }
-
       if (empty($errors)) {
 
         $this->teacherModel->update($id, [
           'name' => $name,
-          'email' => $email,
-          'password' => $password
+          'email' => $email
         ]);
 
         setFlash('success', 'Teacher updated');
