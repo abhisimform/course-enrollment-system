@@ -9,7 +9,7 @@
   <button type="submit">Filter</button>
 </form>
 
-<?php if (hasPermission('create_teacher') && !isset($_GET['deleted'])): ?>
+<?php if (Rbac::has('teacher.create') && !isset($_GET['deleted'])): ?>
   <a href="/teachers/create">Add Teacher</a>
 <?php endif; ?>
 

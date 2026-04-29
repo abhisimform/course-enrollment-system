@@ -4,7 +4,7 @@ require_once BASE_PATH . "/app/models/Course.php";
 
 class Courses extends BaseController
 {
-  private $courseModel;
+  private object $courseModel;
 
   public function __construct()
   {
@@ -16,58 +16,7 @@ class Courses extends BaseController
   {
     Rbac::require('course.view_all');
 
-    $options = QueryBuilder::build([
-      'query' => $_GET,
-      'filterableFields' => [
-        'status' => [
-          'column' => 'c.status',
-          'type' => 'int'
-        ],
-        'instructor_id' => [
-          'column' => 'c.instructor_id',
-          'type' => 'int'
-        ]
-      ],
-      'searchableFields' => [
-        'c.course_name',
-        'u.name'
-      ],
-      'joins' => [
-        "LEFT JOIN users u ON c.instructor_id = u.id"
-      ],
-      'allowedSorts' => [
-        'id' => 'c.id',
-        'course_name' => 'c.course_name',
-        'instructor_name' => 'u.name',
-        'status' => 'c.status'
-      ],
-      'defaultSort' => 'id',
-      'defaultOrder' => 'ASC',
-      'deletedColumn' => 'c.deleted_at',
-      'defaultLimit' => 10,
-      'maxLimit' => 100
-    ]);
-
-    $user = $_SESSION['user'];
-    $userId = $user['id'];
-
-    $courses = $this->courseModel->getAll($options, $userId);
-    $total = $this->courseModel->countAll($options);
-
-    $totalPages = ceil($total / $options['limit']);
-    $instructors = $this->courseModel->getInstructors();
-
-    return $this->render('courses/index', [
-      'courses' => $courses,
-      'pagination' => [
-        'totalItems' => $total,
-        'totalPages' => $totalPages,
-        'currentPage' => $options['page'],
-        'limit' => $options['limit']
-      ],
-      'filters' => $_GET,
-      'instructors' => $instructors
-    ]);
+    return $this->render('courses/index');
   }
 
   public function create()
@@ -75,23 +24,16 @@ class Courses extends BaseController
     Rbac::require('course.create');
 
     $errors = [];
-
-    if (empty($_SESSION['csrf_token'])) {
-      $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
+    $this->ensureCsrf();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $this->validateCsrfOrFail();
 
-      $csrf_token     = $_POST['csrf_token'] ?? '';
       $course_name    = trim($_POST['course_name'] ?? '');
       $instructor_id  = $_POST['instructor_id'] ?? '';
       $duration_weeks = $_POST['duration_weeks'] ?? '';
       $max_seats      = $_POST['max_seats'] ?? '';
       $status         = $_POST['status'] ?? '1';
-
-      if ($csrf_token === '' || !hash_equals($_SESSION['csrf_token'], $csrf_token)) {
-        $errors['csrf_token'] = 'Invalid request. Please refresh the form and try again.';
-      }
 
       if ($course_name === '') {
         $errors['course_name'] = 'Course name is required';
@@ -151,8 +93,10 @@ class Courses extends BaseController
     }
 
     $errors = [];
+    $this->ensureCsrf();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $this->validateCsrfOrFail();
 
       $course_name    = trim($_POST['course_name'] ?? '');
       $instructor_id  = $_POST['instructor_id'] ?? '';
@@ -162,6 +106,8 @@ class Courses extends BaseController
 
       if ($course_name === '') {
         $errors['course_name'] = 'Course name is required';
+      } elseif (mb_strlen($course_name) > 150) {
+        $errors['course_name'] = 'Course name must not exceed 150 characters';
       } elseif (
         $course_name !== $course['course_name'] &&
         $this->courseModel->courseNameExists($course_name)
@@ -171,14 +117,16 @@ class Courses extends BaseController
 
       if ($instructor_id === '') {
         $errors['instructor_id'] = 'Instructor is required';
+      } elseif (!ctype_digit((string)$instructor_id) || !$this->courseModel->instructorExists($instructor_id)) {
+        $errors['instructor_id'] = 'Selected instructor is invalid';
       }
 
-      if ($duration_weeks === '' || !is_numeric($duration_weeks) || (int)$duration_weeks <= 0) {
-        $errors['duration_weeks'] = 'Duration must be a positive number';
+      if ($duration_weeks === '' || !ctype_digit((string)$duration_weeks) || (int)$duration_weeks < 1 || (int)$duration_weeks > 260) {
+        $errors['duration_weeks'] = 'Duration must be between 1 and 260 weeks';
       }
 
-      if ($max_seats === '' || !is_numeric($max_seats) || (int)$max_seats <= 0) {
-        $errors['max_seats'] = 'Max seats must be a positive number';
+      if ($max_seats === '' || !ctype_digit((string)$max_seats) || (int)$max_seats < 1 || (int)$max_seats > 10000) {
+        $errors['max_seats'] = 'Max seats must be between 1 and 10000';
       }
 
       if ($status !== '0' && $status !== '1') {
@@ -219,7 +167,7 @@ class Courses extends BaseController
 
   public function ajax()
   {
-    Rbac::require('course.view_all');
+    Rbac::require('audit.view_all');
 
     header('Content-Type: application/json');
 
@@ -283,9 +231,9 @@ class Courses extends BaseController
       $enrollment = '';
       if (Rbac::has('enrollment.create') && !Rbac::isAdmin() && !$row['deleted_at']) {
         if (!empty($row['is_enrolled'])) {
-          $enrollment = '<form method="POST" action="/enrollments/cancel" class="dt-inline-form"><input type="hidden" name="id" value="' . (int)$row['en_id'] . '"><button type="submit" class="dt-btn dt-btn-danger">Cancel</button></form>';
+          $enrollment = '<form method="POST" action="/enrollments/cancel" class="dt-inline-form">' . csrfInput() . '<input type="hidden" name="id" value="' . (int)$row['en_id'] . '"><button type="submit" class="dt-btn dt-btn-danger">Cancel</button></form>';
         } else {
-          $enrollment = '<form method="POST" action="/enrollments/enroll" class="dt-inline-form"><input type="hidden" name="course_id" value="' . (int)$row['id'] . '"><button type="submit" class="dt-btn">Enroll</button></form>';
+          $enrollment = '<form method="POST" action="/enrollments/enroll" class="dt-inline-form">' . csrfInput() . '<input type="hidden" name="course_id" value="' . (int)$row['id'] . '"><button type="submit" class="dt-btn">Enroll</button></form>';
         }
       }
 

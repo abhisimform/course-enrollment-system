@@ -10,12 +10,7 @@ $flash = getFlash(); ?>
 <?php endif; ?>
 
 <form method="POST" action="/courses/edit/<?= $course['id'] ?>">
-
-  <input 
-    type="hidden" 
-    name="csrf_token" 
-    value="<?= $_SESSION['csrf_token'] ?>"
-  >
+  <?= csrfInput() ?>
 
   <input type="hidden" name="id" value="<?= $course['id'] ?>">
 

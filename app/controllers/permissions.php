@@ -19,21 +19,7 @@ class Permissions extends BaseController
 
   public function index()
   {
-    $page = max(1, intval($_GET['page'] ?? 1));
-    $perPage = 5;
-    $offset = ($page - 1) * $perPage;
-
-    $q = $_GET['q'] ?? '';
-
-    $permissions = $this->permissionModel->getPaginated($perPage, $offset, $q);
-    $total = $this->permissionModel->countFiltered($q ?? '');
-
-    $this->render('permissions/index', [
-      'permissions' => $permissions,
-      'totalPages' => ceil($total / $perPage),
-      'page' => $page,
-      'q' => $q
-    ]);
+    $this->render('permissions/index');
   }
 
   public function view($id)
@@ -45,28 +31,53 @@ class Permissions extends BaseController
 
   public function create()
   {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $name = trim($_POST['name']);
-      $this->permissionModel->create($name);
+    $errors = [];
 
-      return $this->redirect('/permissions');
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $this->validateCsrfOrFail();
+
+      $name = trim($_POST['name'] ?? '');
+
+      if ($name === '') {
+        $errors[] = 'Permission name is required';
+      } elseif (mb_strlen($name) > 100) {
+        $errors[] = 'Permission name must not exceed 100 characters';
+      }
+
+      if (empty($errors)) {
+        $this->permissionModel->create($name);
+
+        return $this->redirect('/permissions');
+      }
     }
 
-    $this->render('permissions/create');
+    $this->render('permissions/create', compact('errors'));
   }
 
   public function edit($id)
   {
     $permission = $this->permissionModel->getById($id);
+    $errors = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $name = trim($_POST['name']);
-      $this->permissionModel->update($id, $name);
+      $this->validateCsrfOrFail();
 
-      return $this->redirect('/permissions');
+      $name = trim($_POST['name'] ?? '');
+
+      if ($name === '') {
+        $errors[] = 'Permission name is required';
+      } elseif (mb_strlen($name) > 100) {
+        $errors[] = 'Permission name must not exceed 100 characters';
+      }
+
+      if (empty($errors)) {
+        $this->permissionModel->update($id, $name);
+
+        return $this->redirect('/permissions');
+      }
     }
 
-    $this->render('permissions/edit', compact('permission'));
+    $this->render('permissions/edit', compact('permission', 'errors'));
   }
 
   public function delete($id)
@@ -90,11 +101,12 @@ class Permissions extends BaseController
     $allPermissions = $this->permissionModel->getAll();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $this->validateCsrfOrFail();
 
       $role = $_POST['role'] ?? null;
       $permissionIds = $_POST['permissions'] ?? [];
 
-      if ($role) {
+      if (in_array($role, $roles, true)) {
         $this->permissionModel->assignToRole($role, $permissionIds);
       }
 
@@ -118,6 +130,8 @@ class Permissions extends BaseController
   public function updateRolePermissions()
   {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $this->validateCsrfOrFail();
+
       $roles = ['admin', 'teacher', 'student'];
 
       foreach ($roles as $role) {
@@ -132,12 +146,13 @@ class Permissions extends BaseController
   public function users()
   {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $this->validateCsrfOrFail();
 
       $userId = $_POST['user_id'] ?? null;
       $permissionIds = $_POST['permissions'] ?? [];
 
-      if ($userId) {
-        $this->permissionModel->assignToUser($userId, $permissionIds);
+      if (ctype_digit((string)$userId) && (int)$userId > 0) {
+        $this->permissionModel->assignToUser((int)$userId, $permissionIds);
       }
 
       return $this->redirect("/permissions/users?user_id=" . $userId);
@@ -194,10 +209,14 @@ class Permissions extends BaseController
   public function updateUserPermissions()
   {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $userId = $_POST['user_id'];
+      $this->validateCsrfOrFail();
+
+      $userId = $_POST['user_id'] ?? '';
       $permissionIds = $_POST['permissions'] ?? [];
 
-      $this->permissionModel->assignToUser($userId, $permissionIds);
+      if (ctype_digit((string)$userId) && (int)$userId > 0) {
+        $this->permissionModel->assignToUser((int)$userId, $permissionIds);
+      }
 
       return $this->redirect("/permissions/users?user_id=" . $userId);
     }

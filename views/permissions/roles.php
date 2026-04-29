@@ -20,6 +20,7 @@
   <?php $currentPermissions = $rolePermissions[$selectedRole] ?? []; ?>
 
   <form method="POST" action="/permissions/roles">
+    <?= csrfInput() ?>
 
     <input type="hidden" name="role" value="<?= $selectedRole ?>">
 

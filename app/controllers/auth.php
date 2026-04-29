@@ -34,6 +34,7 @@ class Auth extends BaseController
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       $this->validateCsrfOrFail();
+      $this->validateCsrfOrFail();
 
       $email = trim($_POST['email'] ?? '');
       $password = $_POST['password'] ?? '';
@@ -127,6 +128,34 @@ class Auth extends BaseController
     exit;
   }
 
+  public function register()
+  {
+    redirectIfLoggedIn();
+
+    $this->ensureCsrf();
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+      $this->validateCsrfOrFail();
+
+      $rules = AuthValidator::register();
+
+      if (!$this->validator->validate($_POST, $rules)) {
+        $errors = $this->validator->errors();
+
+        return $this->redirect("/auth/register");
+      }
+
+      $this->authModel->register($_POST);
+
+      setFlash('success', 'Registered successfully! Please login.');
+
+      return $this->redirect("/auth/login");
+    }
+
+    return $this->render('auth/register', []);
+  }
+
   public function logout()
   {
     $_SESSION = [];
@@ -156,6 +185,7 @@ class Auth extends BaseController
     $errors = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $this->validateCsrfOrFail();
       $this->validateCsrfOrFail();
 
       $formType = $_POST['form_type'] ?? 'profile';

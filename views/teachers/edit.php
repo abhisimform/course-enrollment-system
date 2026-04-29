@@ -14,6 +14,7 @@
 <?php endif; ?>
 
 <form method="POST">
+  <?= csrfInput() ?>
   <label>Name:</label>
   <input type="text" name="name" value="<?= htmlspecialchars($_POST['name'] ?? $teacher['name']) ?>" required>
   <br><br>

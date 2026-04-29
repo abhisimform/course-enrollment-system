@@ -137,7 +137,7 @@ $roleLabel = ucfirst($profile['role'] ?? 'user');
 
 <div class="profile-grid">
   <form class="content-card profile-card" method="POST" action="/auth/profile">
-    <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>">
+    <?= csrfInput() ?>
     <input type="hidden" name="form_type" value="profile">
 
     <h2 class="page-title" style="font-size:20px;">Account Details</h2>
@@ -184,7 +184,7 @@ $roleLabel = ucfirst($profile['role'] ?? 'user');
   </form>
 
   <form class="content-card profile-card" method="POST" action="/auth/profile" data-password-validation>
-    <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>">
+    <?= csrfInput() ?>
     <input type="hidden" name="form_type" value="password">
 
     <h2 class="page-title" style="font-size:20px;">Change Password</h2>

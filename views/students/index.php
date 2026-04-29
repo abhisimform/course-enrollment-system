@@ -9,7 +9,7 @@
   <button type="submit">Filter</button>
 </form>
 
-<?php if (hasPermission('create_student')): ?>
+<?php if (Rbac::has('student.create')): ?>
   <a href="/students/create">Add Student</a>
 <?php endif; ?>
 

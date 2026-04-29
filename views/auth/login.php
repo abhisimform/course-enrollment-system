@@ -9,11 +9,7 @@
 <?php endif; ?>
 
 <form method="POST" action="/auth/login">
-
-  <input
-    type="hidden"
-    name="csrf_token"
-    value="<?= $_SESSION['csrf_token'] ?>">
+  <?= csrfInput() ?>
 
   <input
     type="text"

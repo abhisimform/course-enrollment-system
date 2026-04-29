@@ -1,6 +1,6 @@
 <?php
 
-require_once BASE_PATH . "/app/models/Teacher.php";
+require_once BASE_PATH . '/app/models/Teacher.php';
 
 class Teachers extends BaseController
 {
@@ -16,25 +16,7 @@ class Teachers extends BaseController
   {
     Rbac::require('teacher.view_all');
 
-    $currentPage = (int)($_GET['page'] ?? 1);
-    $perPage = 10;
-
-    $search = $_GET['search'] ?? '';
-    $showDeleted = isset($_GET['deleted']);
-
-    $teachers = $this->teacherModel->getTeachers($search, $currentPage, $perPage, $showDeleted);
-    $totalTeachers = $this->teacherModel->countTeachers($search, $showDeleted);
-    $totalPages = ceil($totalTeachers / $perPage);
-
-    return $this->render('teachers/index', compact(
-      'teachers',
-      'currentPage',
-      'perPage',
-      'search',
-      'showDeleted',
-      'totalTeachers',
-      'totalPages'
-    ));
+    return $this->render('teachers/index');
   }
 
   public function restore($id)
@@ -44,7 +26,7 @@ class Teachers extends BaseController
     $this->teacherModel->restore($id);
     setFlash('success', 'Teacher restored');
 
-    return $this->redirect("/teachers?deleted=1");
+    return $this->redirect('/teachers?deleted=1');
   }
 
   public function create()
@@ -52,8 +34,10 @@ class Teachers extends BaseController
     Rbac::require('teacher.create');
 
     $errors = [];
+    $this->ensureCsrf();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $this->validateCsrfOrFail();
 
       $name = trim($_POST['name'] ?? '');
       $email = trim($_POST['email'] ?? '');
@@ -61,6 +45,8 @@ class Teachers extends BaseController
 
       if ($name === '') {
         $errors['name'] = 'Name is required';
+      } elseif (mb_strlen($name) > 100) {
+        $errors['name'] = 'Name must not exceed 100 characters';
       }
 
       if ($email === '') {
@@ -87,7 +73,7 @@ class Teachers extends BaseController
 
         setFlash('success', 'Teacher created');
 
-        return $this->redirect("/teachers");
+        return $this->redirect('/teachers');
       }
     }
 
@@ -101,12 +87,14 @@ class Teachers extends BaseController
     $teacher = $this->teacherModel->find($id);
 
     if (!$teacher) {
-      die("Teacher not found");
+      die('Teacher not found');
     }
 
     $errors = [];
+    $this->ensureCsrf();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $this->validateCsrfOrFail();
 
       $name = trim($_POST['name'] ?? '');
       $email = trim($_POST['email'] ?? '');
@@ -114,6 +102,8 @@ class Teachers extends BaseController
 
       if ($name === '') {
         $errors['name'] = 'Name is required';
+      } elseif (mb_strlen($name) > 100) {
+        $errors['name'] = 'Name must not exceed 100 characters';
       }
 
       if ($email === '') {
@@ -127,6 +117,10 @@ class Teachers extends BaseController
         $errors['email'] = 'Email already in use';
       }
 
+      if ($password !== '' && strlen($password) < 6) {
+        $errors['password'] = 'Password must be at least 6 characters';
+      }
+
       if (empty($errors)) {
 
         $this->teacherModel->update($id, [
@@ -137,7 +131,7 @@ class Teachers extends BaseController
 
         setFlash('success', 'Teacher updated');
 
-        return $this->redirect("/teachers/view/$id");
+        return $this->redirect('/teachers');
       }
     }
 
@@ -152,7 +146,7 @@ class Teachers extends BaseController
 
     setFlash('success', 'Teacher deleted');
 
-    return $this->redirect("/teachers");
+    return $this->redirect('/teachers');
   }
 
   public function ajax()
@@ -179,15 +173,15 @@ class Teachers extends BaseController
       $actions = [];
 
       if ($showDeleted) {
-        if (hasPermission('restore_teacher')) {
+        if (Rbac::has('teacher.restore')) {
           $actions[] = '<a href="/teachers/restore/' . (int)$row['id'] . '">Restore</a>';
         }
       } else {
-        if (hasPermission('edit_teacher')) {
+        if (Rbac::has('teacher.edit')) {
           $actions[] = '<a href="/teachers/edit/' . (int)$row['id'] . '">Edit</a>';
         }
 
-        if (hasPermission('delete_teacher')) {
+        if (Rbac::has('teacher.delete')) {
           $actions[] = '<a href="/teachers/delete/' . (int)$row['id'] . '" onclick="return confirm(\'Delete teacher?\')">Delete</a>';
         }
       }

@@ -13,6 +13,7 @@
 <?php endif; ?>
 
 <form method="POST">
+  <?= csrfInput() ?>
   <input name="name" value="<?= htmlspecialchars($_POST['name'] ?? $student['name']) ?>" placeholder="Name" required><br><br>
 
   <input name="email" value="<?= htmlspecialchars($_POST['email'] ?? $student['email']) ?>" placeholder="Email" required><br><br>

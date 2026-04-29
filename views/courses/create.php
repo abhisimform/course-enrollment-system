@@ -11,11 +11,7 @@
 <?php endif; ?>
 
 <form method="POST" action="/courses/create">
-
-  <input
-    type="hidden"
-    name="csrf_token"
-    value="<?= $_SESSION['csrf_token'] ?>">
+  <?= csrfInput() ?>
 
   <label for="course_name">Course Name:</label>
   <input

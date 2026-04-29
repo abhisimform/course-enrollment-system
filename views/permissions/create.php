@@ -11,7 +11,7 @@
 <?php endif; ?>
 
 <form method="POST" action="/permissions/create">
-  <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+  <?= csrfInput() ?>
 
   <label>Permission Name:</label>
   <input type="text" name="name" value="<?= htmlspecialchars($_POST['name'] ?? '') ?>" required>

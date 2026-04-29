@@ -5,7 +5,7 @@
   <select name="user_id" onchange="this.form.submit()">
     <option value="">-- Select User --</option>
     <?php foreach ($users as $u): ?>
-      <option value="<?= $u['id'] ?>" <?= ($selectedUser['id'] ?? '') == $u['id'] ? 'selected' : '' ?>>
+      <option value="<?= e((int)$u['id']) ?>" <?= ($selectedUser['id'] ?? '') == e((int)$u['id']) ? 'selected' : '' ?>>
         <?= htmlspecialchars($u['name']) ?>
       </option>
     <?php endforeach; ?>
@@ -19,8 +19,9 @@
   <h3>🧑 Selected User: <?= htmlspecialchars($selectedUser['name']) ?></h3>
 
   <form method="POST" action="/permissions/users">
+    <?= csrfInput() ?>
 
-    <input type="hidden" name="user_id" value="<?= $selectedUser['id'] ?>">
+    <input type="hidden" name="user_id" value="<?= e((int)$selectedUser['id']) ?>">
 
     <label>Assign Role (optional preset):</label>
     <select name="role" id="roleSelect">
@@ -79,7 +80,7 @@
 
                     <input type="checkbox"
                       name="permissions[]"
-                      value="<?= $perm['id'] ?>"
+                      value="<?= e((int)$perm['id']) ?>"
                       <?= in_array($perm['id'], $userPermissions ?? []) ? 'checked' : '' ?>>
 
                     <?= htmlspecialchars($action) ?>

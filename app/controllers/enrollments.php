@@ -22,45 +22,51 @@ class Enrollments extends BaseController
     $user = $_SESSION['user'];
     $role = $user['role'];
 
-    $filters = $_GET;
+    // $filters = $_GET;
 
-    $limit = (int)($filters['limit'] ?? 10);
-    $page = (int)($filters['page'] ?? 1);
-    $offset = ($page - 1) * $limit;
+    // $limit = (int)($filters['limit'] ?? 10);
+    // $page = (int)($filters['page'] ?? 1);
+    // $offset = ($page - 1) * $limit;
 
 
-    if ($role === 'admin') {
-      Rbac::require('enrollment.view_all');
+    // if ($role === 'admin') {
+    //   Rbac::require('enrollment.view_all');
 
-      $enrollments = $this->enrollmentModel->getAll($filters, $limit, $offset);
-      $total = $this->enrollmentModel->countAll($filters);
-    } else {
-      $enrollments = $this->enrollmentModel->getByStudent($user['id'], $limit, $offset);
-      $total = $this->enrollmentModel->countByStudent($user['id']);
-    }
+    //   $enrollments = $this->enrollmentModel->getAll($filters, $limit, $offset);
+    //   $total = $this->enrollmentModel->countAll($filters);
+    // } else {
+    //   $enrollments = $this->enrollmentModel->getByStudent($user['id'], $limit, $offset);
+    //   $total = $this->enrollmentModel->countByStudent($user['id']);
+    // }
 
-    $totalPages = ceil($total / $limit);
+    // $totalPages = ceil($total / $limit);
 
     return $this->render('enrollments/index', [
-      'enrollments' => $enrollments,
-      'filters' => $filters,
+      // 'enrollments' => $enrollments,
+      // 'filters' => $filters,
       'role' => $role,
-      'pagination' => [
-        'page' => $page,
-        'totalPages' => $totalPages,
-        'limit' => $limit
-      ]
+      // 'pagination' => [
+      //   'page' => $page,
+      //   'totalPages' => $totalPages,
+      //   'limit' => $limit
+      // ]
     ]);
   }
 
   public function enroll()
   {
     Rbac::require('enrollment.create');
+    $this->validateCsrfOrFail();
 
     $studentId = $_SESSION['user']['id'];
-    $courseId = $_POST['course_id'];
+    $courseId = $_POST['course_id'] ?? '';
 
-    $this->enrollmentModel->enroll($studentId, $courseId);
+    if (!ctype_digit((string)$courseId) || (int)$courseId <= 0) {
+      setFlash('error', 'Invalid course selected');
+      return $this->redirect('/courses');
+    }
+
+    $this->enrollmentModel->enroll($studentId, (int)$courseId);
 
     return $this->redirect('/courses');
   }
@@ -68,11 +74,12 @@ class Enrollments extends BaseController
   public function cancel()
   {
     Rbac::require('enrollment.update');
+    $this->validateCsrfOrFail();
 
-    $id = $_POST['id'] ?? null;
+    $id = $_POST['id'] ?? '';
 
-    if ($id) {
-      $this->enrollmentModel->cancel($id);
+    if (ctype_digit((string)$id) && (int)$id > 0) {
+      $this->enrollmentModel->cancel((int)$id);
     }
 
     return $this->redirect('/enrollments');
@@ -81,11 +88,12 @@ class Enrollments extends BaseController
   public function delete()
   {
     Rbac::require('enrollment.delete');
+    $this->validateCsrfOrFail();
 
-    $id = $_POST['id'] ?? null;
+    $id = $_POST['id'] ?? '';
 
-    if ($id) {
-      $this->enrollmentModel->delete($id);
+    if (ctype_digit((string)$id) && (int)$id > 0) {
+      $this->enrollmentModel->delete((int)$id);
     }
 
     return $this->redirect('/enrollments');
@@ -126,8 +134,8 @@ class Enrollments extends BaseController
         : '<span class="dt-badge dt-badge-warning">Cancelled</span>';
 
       $row['actions'] = '';
-      if (((!$isAdmin) || hasPermission('enrollment.update')) && strtolower((string)$row['status']) === 'active') {
-        $row['actions'] = '<form method="POST" action="/enrollments/cancel" class="dt-inline-form"><input type="hidden" name="id" value="' . (int)$row['id'] . '"><button type="submit" class="dt-btn dt-btn-danger">Cancel</button></form>';
+      if (((!$isAdmin) || Rbac::has('enrollment.update')) && strtolower((string)$row['status']) === 'active') {
+        $row['actions'] = '<form method="POST" action="/enrollments/cancel" class="dt-inline-form">' . csrfInput() . '<input type="hidden" name="id" value="' . (int)$row['id'] . '"><button type="submit" class="dt-btn dt-btn-danger">Cancel</button></form>';
       }
     }
 
