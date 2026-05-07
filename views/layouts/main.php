@@ -453,6 +453,10 @@
       <a href="/audit">Audit Logs</a>
     <?php endif; ?>
 
+    <?php if (Rbac::isAdmin()): ?>
+      <a href="/notifications">Email Queue</a>
+    <?php endif; ?>
+
     <?php if (Rbac::has('audit.auth_log')): ?>
       <a href="/authlogs">Auth Logs</a>
     <?php endif; ?>

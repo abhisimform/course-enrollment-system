@@ -33,8 +33,8 @@ class Auth extends BaseController
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-      $this->validateCsrfOrFail();
-      $this->validateCsrfOrFail();
+      if ($this->validateCsrfOrFail())
+        $errors['csrf_token'] = 'Invalid CSRF token';
 
       $email = trim($_POST['email'] ?? '');
       $password = $_POST['password'] ?? '';
@@ -139,7 +139,7 @@ class Auth extends BaseController
   public function profile()
   {
     requireLogin();
-    
+
     Rbac::require('profile.view');
 
     $this->layout = 'main';
@@ -157,8 +157,8 @@ class Auth extends BaseController
     $errors = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $this->validateCsrfOrFail();
-      $this->validateCsrfOrFail();
+      if ($this->validateCsrfOrFail())
+        $errors['csrf_token'] = 'Invalid CSRF token';
 
       $formType = $_POST['form_type'] ?? 'profile';
 

@@ -11,7 +11,7 @@
 <?php endif; ?>
 
 <form method="POST" action="/courses/create">
-  <?= csrfInput() ?>
+  <?= csrfInput(); ?>
 
   <label for="course_name">Course Name:</label>
   <input

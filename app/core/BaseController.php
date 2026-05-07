@@ -13,9 +13,11 @@ class BaseController
   protected function validateCsrfOrFail()
   {
     if (!isValidCsrfToken($_POST['csrf_token'] ?? '')) {
+      return true;
       http_response_code(403);
       die('Invalid CSRF token');
     }
+    return false;
   }
 
   protected function render($viewPath, $data = [])

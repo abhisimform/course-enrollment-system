@@ -40,6 +40,10 @@ $flash = getFlash(); ?>
       📜 Audit Logs
     </a>
 
+    <a href="/notifications" style="padding:8px 12px; background:#333; color:#fff; border-radius:5px; text-decoration:none;">
+      ✉️ Email Queue
+    </a>
+
   </div>
 
   <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:15px;">
@@ -77,6 +81,11 @@ $flash = getFlash(); ?>
     <div style="padding:20px; background:#eee;">
       <h3>📜 Audit Logs</h3>
       <p><?= $data['audit_logs'] ?></p>
+    </div>
+
+    <div style="padding:20px; background:#eee;">
+      <h3>✉️ Email Queue</h3>
+      <p><a href="/notifications">Manage queued emails</a></p>
     </div>
 
   </div>

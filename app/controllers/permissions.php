@@ -22,19 +22,13 @@ class Permissions extends BaseController
     $this->render('permissions/index');
   }
 
-  public function view($id)
-  {
-    $permission = $this->permissionModel->getById($id);
-
-    $this->render('permissions/view', compact('permission'));
-  }
-
   public function create()
   {
     $errors = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $this->validateCsrfOrFail();
+      if ($this->validateCsrfOrFail())
+        $errors['csrf_token'] = 'Invalid CSRF token';
 
       $name = trim($_POST['name'] ?? '');
 
@@ -60,7 +54,8 @@ class Permissions extends BaseController
     $errors = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $this->validateCsrfOrFail();
+      if ($this->validateCsrfOrFail())
+        $errors['csrf_token'] = 'Invalid CSRF token';
 
       $name = trim($_POST['name'] ?? '');
 
@@ -101,7 +96,8 @@ class Permissions extends BaseController
     $allPermissions = $this->permissionModel->getAll();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $this->validateCsrfOrFail();
+      if ($this->validateCsrfOrFail())
+        $errors['csrf_token'] = 'Invalid CSRF token';
 
       $role = $_POST['role'] ?? null;
       $permissionIds = $_POST['permissions'] ?? [];
@@ -130,7 +126,8 @@ class Permissions extends BaseController
   public function updateRolePermissions()
   {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $this->validateCsrfOrFail();
+      if ($this->validateCsrfOrFail())
+        $errors['csrf_token'] = 'Invalid CSRF token';
 
       $roles = ['admin', 'teacher', 'student'];
 
@@ -146,7 +143,8 @@ class Permissions extends BaseController
   public function users()
   {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $this->validateCsrfOrFail();
+      if ($this->validateCsrfOrFail())
+        $errors['csrf_token'] = 'Invalid CSRF token';
 
       $userId = $_POST['user_id'] ?? null;
       $permissionIds = $_POST['permissions'] ?? [];
@@ -209,7 +207,8 @@ class Permissions extends BaseController
   public function updateUserPermissions()
   {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $this->validateCsrfOrFail();
+      if ($this->validateCsrfOrFail())
+        $errors['csrf_token'] = 'Invalid CSRF token';
 
       $userId = $_POST['user_id'] ?? '';
       $permissionIds = $_POST['permissions'] ?? [];

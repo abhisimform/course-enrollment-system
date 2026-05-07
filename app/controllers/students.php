@@ -1,15 +1,21 @@
 <?php
 
+require_once BASE_PATH . "/app/models/User.php";
 require_once BASE_PATH . "/app/models/Student.php";
+require_once BASE_PATH . "/app/models/Permission.php";
 
 class Students extends BaseController
 {
+  private $userModel;
   private $studentModel;
+  private $permissionModel;
 
   public function __construct()
   {
     requireLogin();
+    $this->userModel = new UserModel();
     $this->studentModel = new StudentModel();
+    $this->permissionModel = new PermissionModel();
   }
 
   public function index()
@@ -34,10 +40,10 @@ class Students extends BaseController
     Rbac::require('student.create');
 
     $errors = [];
-    $this->ensureCsrf();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $this->validateCsrfOrFail();
+      if ($this->validateCsrfOrFail())
+        $errors['csrf_token'] = 'Invalid CSRF token';
 
       $name = trim($_POST['name'] ?? '');
       $email = trim($_POST['email'] ?? '');
@@ -53,7 +59,7 @@ class Students extends BaseController
         $errors['email'] = 'Email is required';
       } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors['email'] = 'Invalid email';
-      } elseif ($this->studentModel->emailExists($email)) {
+      } elseif ($this->userModel->emailExists($email)) {
         $errors['email'] = 'Email already in use';
       }
 
@@ -64,20 +70,168 @@ class Students extends BaseController
       }
 
       if (empty($errors)) {
-
-        $this->studentModel->create([
+        $createdUserId = $this->studentModel->create([
           'name' => $name,
           'email' => $email,
           'password' => $password
         ]);
 
-        setFlash('success', 'Student created');
+        if ($createdUserId) {
+          $rolePermissionIds = array_column(
+            $this->permissionModel->getRolePermissions('student'),
+            'id'
+          );
+
+          $this->permissionModel->assignToUser((int)$createdUserId, $rolePermissionIds);
+
+          $mailResult = Mailer::sendWelcomeCredentials(
+            ['name' => $name, 'email' => $email],
+            ['role' => 'student', 'password' => $password]
+          );
+
+          setFlash(
+            $mailResult['sent'] ? 'success' : 'error',
+            $mailResult['sent']
+              ? 'Student created and welcome email sent'
+              : 'Student created. ' . $mailResult['message']
+          );
+        } else {
+          setFlash('error', 'Student could not be created');
+        }
 
         return $this->redirect("/students");
       }
     }
 
     return $this->render('students/create', compact('errors'));
+  }
+
+  private function parseCsv($filePath)
+  {
+    $rows = [];
+
+    if (($handle = fopen($filePath, 'r')) !== false) {
+      while (($data = fgetcsv($handle, 1000, ',', '"', '\\')) !== false) {
+        $rows[] = $data;
+      }
+      fclose($handle);
+    }
+
+    return $rows;
+  }
+
+  public function bulkUpload()
+  {
+    Rbac::require('student.create');
+
+    $errors = [];
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      if ($this->validateCsrfOrFail())
+        $errors['csrf_token'] = 'Invalid CSRF token';
+
+      if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+        dd($_FILES);
+        $errors[] = 'File upload failed';
+        return $this->render('students/bulk_upload', compact('errors'));
+      }
+
+      $file = $_FILES['file'];
+
+      if ($file['size'] > 2 * 1024 * 1024) {
+        $errors[] = 'File too large (max 2MB)';
+        return $this->render('students/bulk_upload', compact('errors'));
+      }
+
+      $allowedTypes = [
+        'text/csv',
+      ];
+
+      if (!in_array($file['type'], $allowedTypes)) {
+        $errors[] = 'Only CSV files are allowed';
+        return $this->render('students/bulk_upload', compact('errors'));
+      }
+
+      $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+
+      if ($ext === 'csv') {
+        $rows = $this->parseCsv($file['tmp_name']);
+      }
+
+      if (empty($rows)) {
+        $errors[] = 'File is empty';
+        return $this->render('students/bulk_upload', compact('errors'));
+      }
+
+      $header = array_map('strtolower', $rows[0]);
+
+      if ($header !== ['name', 'email']) {
+        $errors[] = 'Invalid columns. Required: name, email';
+        return $this->render('students/bulk_upload', compact('errors'));
+      }
+
+      unset($rows[0]);
+
+      $validData = [];
+      $rowErrors = [];
+
+      foreach ($rows as $index => $row) {
+        $rowNumber = $index + 2;
+
+        $name = trim($row[0] ?? '');
+        $email = trim($row[1] ?? '');
+
+        if ($name === '') {
+          $rowErrors[] = "Row {$rowNumber}: Name is required";
+          continue;
+        }
+
+        if (mb_strlen($name) > 100) {
+          $rowErrors[] = "Row {$rowNumber}: Name too long";
+          continue;
+        }
+
+        if ($email === '') {
+          $rowErrors[] = "Row {$rowNumber}: Email is required";
+          continue;
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+          $rowErrors[] = "Row {$rowNumber}: Invalid email";
+          continue;
+        }
+
+        if ($this->userModel->emailExists($email)) {
+          $rowErrors[] = "Row {$rowNumber}: Email already exists";
+          continue;
+        }
+
+        $validData[] = [
+          'name' => $name,
+          'email' => $email,
+          'password' => '123456'
+        ];
+      }
+
+      if (!empty($rowErrors)) {
+        return $this->render('students/bulk_upload', [
+          'errors' => $rowErrors
+        ]);
+      }
+
+      $emails = array_column($validData, 'email');
+      if (count($emails) !== count(array_unique($emails))) {
+        $errors[] = 'Duplicate emails found in file';
+        return $this->render('students/bulk_upload', compact('errors'));
+      }
+
+      $this->studentModel->bulkInsert($validData);
+
+      setFlash('success', 'Students uploaded successfully');
+      return $this->redirect('/students');
+    }
+
+    return $this->render('students/bulk_upload', compact('errors'));
   }
 
   public function edit($id)
@@ -91,10 +245,10 @@ class Students extends BaseController
     }
 
     $errors = [];
-    $this->ensureCsrf();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $this->validateCsrfOrFail();
+      if ($this->validateCsrfOrFail())
+        $errors['csrf_token'] = 'Invalid CSRF token';
 
       $name = trim($_POST['name'] ?? '');
       $email = trim($_POST['email'] ?? '');
@@ -110,7 +264,7 @@ class Students extends BaseController
         $errors['email'] = 'Email is required';
       } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors['email'] = 'Invalid email';
-      } elseif ($email !== $student['email'] && $this->studentModel->emailExists($email)) {
+      } elseif ($email !== $student['email'] && $this->userModel->emailExists($email)) {
         $errors['email'] = 'Email already in use';
       }
 

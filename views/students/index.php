@@ -11,6 +11,7 @@
 
 <?php if (Rbac::has('student.create')): ?>
   <a href="/students/create">Add Student</a>
+  <a href="/students/bulkupload" style="margin-left:10px;">Bulk Upload</a>
 <?php endif; ?>
 
 <div class="dt-container">
@@ -37,7 +38,7 @@
       search: {
         search: <?= json_encode($_GET['search'] ?? '') ?>
       },
-      ajax: '/students/ajax?<?= htmlspecialchars(http_build_query($_GET), ENT_QUOTES) ?>',
+      ajax: '/students/ajax?<?= http_build_query($_GET) ?>',
       columns: [{
           data: 'id'
         },

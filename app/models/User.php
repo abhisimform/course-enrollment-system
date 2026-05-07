@@ -62,7 +62,7 @@ class UserModel
       SET deleted_at = NOW()
       WHERE id = :id
     ");
-    
+
     return $stmt->execute(['id' => $id]);
   }
 
@@ -101,5 +101,20 @@ class UserModel
     ");
 
     return $stmt->fetchColumn();
+  }
+
+  public function emailExists($email)
+  {
+
+    $stmt = $this->pdo->prepare("
+      SELECT id 
+      FROM {$this->table} 
+      WHERE email = :email 
+      AND deleted_at IS NULL
+      LIMIT 1
+    ");
+
+    $stmt->execute(['email' => $email]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ? true : false;
   }
 }

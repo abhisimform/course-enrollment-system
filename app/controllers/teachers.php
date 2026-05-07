@@ -1,15 +1,21 @@
 <?php
 
+require_once BASE_PATH . "/app/models/User.php";
 require_once BASE_PATH . '/app/models/Teacher.php';
+require_once BASE_PATH . '/app/models/Permission.php';
 
 class Teachers extends BaseController
 {
+  private $userModel;
   private $teacherModel;
+  private $permissionModel;
 
   public function __construct()
   {
     requireLogin();
+    $this->userModel = new UserModel();
     $this->teacherModel = new TeacherModel();
+    $this->permissionModel = new PermissionModel();
   }
 
   public function index()
@@ -34,10 +40,10 @@ class Teachers extends BaseController
     Rbac::require('teacher.create');
 
     $errors = [];
-    $this->ensureCsrf();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $this->validateCsrfOrFail();
+      if ($this->validateCsrfOrFail())
+        $errors['csrf_token'] = 'Invalid CSRF token';
 
       $name = trim($_POST['name'] ?? '');
       $email = trim($_POST['email'] ?? '');
@@ -53,7 +59,7 @@ class Teachers extends BaseController
         $errors['email'] = 'Email is required';
       } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors['email'] = 'Invalid email format';
-      } elseif ($this->teacherModel->emailExists($email)) {
+      } elseif ($this->userModel->emailExists($email)) {
         $errors['email'] = 'Email already in use';
       }
 
@@ -64,14 +70,34 @@ class Teachers extends BaseController
       }
 
       if (empty($errors)) {
-
-        $this->teacherModel->create([
+        $createdUserId = $this->teacherModel->create([
           'name' => $name,
           'email' => $email,
           'password' => $password
         ]);
 
-        setFlash('success', 'Teacher created');
+        if ($createdUserId) {
+          $rolePermissionIds = array_column(
+            $this->permissionModel->getRolePermissions('teacher'),
+            'id'
+          );
+
+          $this->permissionModel->assignToUser((int)$createdUserId, $rolePermissionIds);
+
+          $mailResult = Mailer::sendWelcomeCredentials(
+            ['name' => $name, 'email' => $email],
+            ['role' => 'teacher', 'password' => $password]
+          );
+
+          setFlash(
+            $mailResult['sent'] ? 'success' : 'error',
+            $mailResult['sent']
+              ? 'Teacher created and welcome email sent'
+              : 'Teacher created. ' . $mailResult['message']
+          );
+        } else {
+          setFlash('error', 'Teacher could not be created');
+        }
 
         return $this->redirect('/teachers');
       }
@@ -91,10 +117,10 @@ class Teachers extends BaseController
     }
 
     $errors = [];
-    $this->ensureCsrf();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $this->validateCsrfOrFail();
+      if ($this->validateCsrfOrFail())
+        $errors['csrf_token'] = 'Invalid CSRF token';
 
       $name = trim($_POST['name'] ?? '');
       $email = trim($_POST['email'] ?? '');
@@ -111,7 +137,7 @@ class Teachers extends BaseController
         $errors['email'] = 'Invalid email format';
       } elseif (
         $email !== $teacher['email'] &&
-        $this->teacherModel->emailExists($email)
+        $this->userModel->emailExists($email)
       ) {
         $errors['email'] = 'Email already in use';
       }
@@ -178,10 +204,6 @@ class Teachers extends BaseController
         if (Rbac::has('teacher.delete')) {
           $actions[] = '<a href="/teachers/delete/' . (int)$row['id'] . '" onclick="return confirm(\'Delete teacher?\')">Delete</a>';
         }
-      }
-
-      if (method_exists($this, 'view')) {
-        $actions[] = '<a href="/teachers/view/' . (int)$row['id'] . '">View</a>';
       }
 
       $row['actions'] = implode(' | ', $actions);

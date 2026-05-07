@@ -20,13 +20,13 @@ class Dashboard extends BaseController
 
     $data = [];
 
-    if ($role === 'admin') {
+    if ($role === 'admin' || $role === 'teacher') {
       $data = $this->adminDashboard();
     } elseif ($role === 'student') {
       $data = $this->studentDashboard($user['id']);
     }
 
-    return $this->render('dashboard/index', $data);
+    return $this->render('dashboard/index', compact('data'));
   }
 
   private function adminDashboard()

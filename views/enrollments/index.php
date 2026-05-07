@@ -72,7 +72,7 @@ $enrollmentColumns = $role === 'admin'
       search: {
         search: <?= json_encode($filters['search'] ?? '') ?>
       },
-      ajax: '/enrollments/ajax?<?= htmlspecialchars(http_build_query($_GET), ENT_QUOTES) ?>',
+      ajax: '/enrollments/ajax?<?= http_build_query($_GET) ?>',
       columns: <?= json_encode($enrollmentColumns) ?>,
       order: [
         [0, 'desc']

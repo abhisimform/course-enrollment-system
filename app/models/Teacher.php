@@ -135,20 +135,6 @@ class TeacherModel
     return $stmt->execute(['id' => $id]);
   }
 
-  public function emailExists($email)
-  {
-    $stmt = $this->pdo->prepare("
-      SELECT id 
-      FROM {$this->table} 
-      WHERE email = :email 
-      AND {$this->baseCondition()}
-      LIMIT 1
-    ");
-
-    $stmt->execute(['email' => $email]);
-    return $stmt->fetch(PDO::FETCH_ASSOC) ? true : false;
-  }
-
   public function count()
   {
     $stmt = $this->pdo->query("

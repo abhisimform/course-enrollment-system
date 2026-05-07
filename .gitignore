@@ -1,2 +1,6 @@
 logs/
 config/*.sql
+.env
+PHPMailer-master
+views/notifications
+views/emails

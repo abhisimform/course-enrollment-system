@@ -91,6 +91,25 @@ class StudentModel
     ]);
   }
 
+  public function bulkInsert($data)
+  {
+    $sql = "INSERT INTO users (name, email, password, role) VALUES ";
+    $values = [];
+    $params = [];
+
+    foreach ($data as $i => $row) {
+      $values[] = "(:name$i, :email$i, :password$i, 'student')";
+      $params["name$i"] = $row['name'];
+      $params["email$i"] = $row['email'];
+      $params["password$i"] = password_hash($row['password'], PASSWORD_BCRYPT);
+    }
+
+    $sql .= implode(',', $values);
+
+    $stmt = $this->pdo->prepare($sql);
+    return $stmt->execute($params);
+  }
+
   public function update($id, $data)
   {
     if (!empty($data['password'])) {
@@ -146,19 +165,6 @@ class StudentModel
       AND role = 'student'
     ");
     return $stmt->execute(['id' => $id]);
-  }
-
-  public function emailExists($email)
-  {
-    $stmt = $this->pdo->prepare("
-      SELECT id 
-      FROM {$this->table} 
-      WHERE email = :email 
-      AND {$this->baseCondition()}
-      LIMIT 1
-    ");
-    $stmt->execute(['email' => $email]);
-    return $stmt->fetch(PDO::FETCH_ASSOC) ? true : false;
   }
 
   public function count()

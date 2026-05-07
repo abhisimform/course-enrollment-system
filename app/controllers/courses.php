@@ -24,10 +24,10 @@ class Courses extends BaseController
     Rbac::require('course.create');
 
     $errors = [];
-    $this->ensureCsrf();
-
+    
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $this->validateCsrfOrFail();
+      if ($this->validateCsrfOrFail())
+        $errors['csrf_token'] = 'Invalid CSRF token';
 
       $course_name    = trim($_POST['course_name'] ?? '');
       $instructor_id  = $_POST['instructor_id'] ?? '';
@@ -93,10 +93,10 @@ class Courses extends BaseController
     }
 
     $errors = [];
-    $this->ensureCsrf();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $this->validateCsrfOrFail();
+      if ($this->validateCsrfOrFail())
+        $errors['csrf_token'] = 'Invalid CSRF token';
 
       $course_name    = trim($_POST['course_name'] ?? '');
       $instructor_id  = $_POST['instructor_id'] ?? '';
@@ -167,7 +167,7 @@ class Courses extends BaseController
 
   public function ajax()
   {
-    Rbac::require('audit.view_all');
+    Rbac::require('course.view_all');
 
     header('Content-Type: application/json');
 
@@ -215,7 +215,7 @@ class Courses extends BaseController
       $manage = [];
 
       if ($row['deleted_at']) {
-        if (Rbac::has('course.restore') && method_exists($this, 'restore')) {
+        if (Rbac::has('course.restore')) {
           $manage[] = '<a href="/courses/restore/' . (int)$row['id'] . '">Restore</a>';
         }
       } else {

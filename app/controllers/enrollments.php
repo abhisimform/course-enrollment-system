@@ -73,7 +73,8 @@ class Enrollments extends BaseController
 
   public function cancel()
   {
-    Rbac::require('enrollment.update');
+    Rbac::require('enrollment.cancel');
+    
     $this->validateCsrfOrFail();
 
     $id = $_POST['id'] ?? '';

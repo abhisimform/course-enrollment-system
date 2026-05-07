@@ -12,6 +12,7 @@ require BASE_PATH . "/app/core/BaseController.php";
 require BASE_PATH . "/app/core/Validator.php";
 require BASE_PATH . "/app/services/Rbac.php";
 require BASE_PATH . "/app/services/QueryBuilder.php";
+require BASE_PATH . "/app/services/Mailer.php";
 
 session_start();
 
