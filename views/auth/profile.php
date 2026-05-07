@@ -31,7 +31,7 @@
 
   .profile-meta {
     margin: 6px 0 0;
-    color: var(--muted);
+    color: var(--text-muted);
   }
 
   .profile-grid {
@@ -62,7 +62,7 @@
     border-radius: var(--radius);
     padding: 9px 11px;
     background: var(--surface-muted);
-    color: var(--muted);
+    color: var(--text-muted);
   }
 
   .profile-hint {
@@ -77,7 +77,7 @@
 
   .simple-hint {
     margin-top: 14px;
-    color: var(--muted);
+    color: var(--text-muted);
     font-size: 14px;
     line-height: 1.5;
   }
@@ -90,6 +90,7 @@
   }
 
   @media (max-width: 980px) {
+
     .profile-grid,
     .profile-hero {
       grid-template-columns: 1fr;

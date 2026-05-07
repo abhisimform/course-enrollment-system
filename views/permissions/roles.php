@@ -22,7 +22,7 @@
   <form method="POST" action="/permissions/roles">
     <?= csrfInput() ?>
 
-    <input type="hidden" name="role" value="<?= $selectedRole ?>">
+    <input type="hidden" name="role" value="<?= e($selectedRole) ?>">
 
     <h3>Permissions for <?= ucfirst($selectedRole) ?></h3>
 

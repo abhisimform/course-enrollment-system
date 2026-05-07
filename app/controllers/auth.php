@@ -7,15 +7,13 @@ class Auth extends BaseController
 {
   private $authModel;
   private $permissionModel;
-  private $validator;
 
   protected $layout = 'public';
 
   public function __construct()
   {
-    $this->permissionModel = new PermissionModel();
     $this->authModel = new AuthModel();
-    $this->validator = new Validator();;
+    $this->permissionModel = new PermissionModel();
   }
 
   public function index()
@@ -94,8 +92,11 @@ class Auth extends BaseController
 
   public function captcha()
   {
-    $code = substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ23456789'), 0, 5);
-    $code = substr(str_shuffle('1'), 0, 5);
+    $characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    $code = '';
+    for ($i = 0; $i < 5; $i++) {
+      $code .= $characters[random_int(0, strlen($characters) - 1)];
+    }
     $_SESSION['captcha_code'] = $code;
 
     header('Content-type: image/png');

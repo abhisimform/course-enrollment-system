@@ -25,16 +25,6 @@ class Teachers extends BaseController
     return $this->render('teachers/index');
   }
 
-  public function restore($id)
-  {
-    Rbac::require('teacher.restore');
-
-    $this->teacherModel->restore($id);
-    setFlash('success', 'Teacher restored');
-
-    return $this->redirect('/teachers?deleted=1');
-  }
-
   public function create()
   {
     Rbac::require('teacher.create');
@@ -158,6 +148,19 @@ class Teachers extends BaseController
     return $this->render('teachers/edit', compact('teacher', 'errors'));
   }
 
+  public function restore()
+  {
+    Rbac::require('teacher.restore');
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      $id = $_POST['teacher_id'] ?? null;
+      $this->teacherModel->restore($id);
+      setFlash('success', 'Teacher restored');
+    }
+
+    return $this->redirect('/teachers?deleted=1');
+  }
+
   public function delete($id)
   {
     Rbac::require('teacher.delete');
@@ -194,7 +197,7 @@ class Teachers extends BaseController
 
       if ($showDeleted) {
         if (Rbac::has('teacher.restore')) {
-          $actions[] = '<a href="/teachers/restore/' . (int)$row['id'] . '">Restore</a>';
+          $actions[] = '<form method="POST" action="/teachers/restore" class="dt-inline-form">' . csrfInput() . '<input type="hidden" name="teacher_id" value="' . (int)$row['id'] . '"><button type="submit" class="dt-btn">Restore</button></form>';
         }
       } else {
         if (Rbac::has('teacher.edit')) {

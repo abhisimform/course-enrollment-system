@@ -4,7 +4,7 @@
 $flash = getFlash(); ?>
 <?php if ($flash): ?>
   <div style="background: green; color:white; padding:10px;">
-    <?= $flash['message'] ?>
+    <?= e($flash['message']) ?>
   </div>
 <?php endif; ?>
 
@@ -38,10 +38,6 @@ $flash = getFlash(); ?>
 
     <a href="/audit" style="padding:8px 12px; background:#333; color:#fff; border-radius:5px; text-decoration:none;">
       📜 Audit Logs
-    </a>
-
-    <a href="/notifications" style="padding:8px 12px; background:#333; color:#fff; border-radius:5px; text-decoration:none;">
-      ✉️ Email Queue
     </a>
 
   </div>
@@ -81,11 +77,6 @@ $flash = getFlash(); ?>
     <div style="padding:20px; background:#eee;">
       <h3>📜 Audit Logs</h3>
       <p><?= $data['audit_logs'] ?></p>
-    </div>
-
-    <div style="padding:20px; background:#eee;">
-      <h3>✉️ Email Queue</h3>
-      <p><a href="/notifications">Manage queued emails</a></p>
     </div>
 
   </div>

@@ -16,22 +16,22 @@ class Audit extends BaseController
   public function index()
   {
     Rbac::require('audit.view_all');
-
+    
     $this->render('/audit/index');
   }
 
   public function view($id)
   {
     Rbac::require('audit.view');
-
+    
     $log = $this->auditModel->find($id);
-
+    
     $this->render('/audit/view', compact('log'));
   }
-
+  
   public function ajax()
   {
-    Rbac::require('course.view_all');
+    Rbac::require('audit.view_all');
 
     header('Content-Type: application/json');
 

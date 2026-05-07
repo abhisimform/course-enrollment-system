@@ -25,7 +25,6 @@ class BaseController
     $this->ensureCsrf();
 
     extract($data);
-    // dd($data);
 
     $view = BASE_PATH . "/views/" . $viewPath . ".php";
 

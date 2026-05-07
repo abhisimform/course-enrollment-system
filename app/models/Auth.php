@@ -57,10 +57,10 @@ class AuthModel
   public function getPermissions($userId)
   {
     $sql = "SELECT p.name
-      FROM permissions p
-      LEFT JOIN role_permissions rp ON rp.permission_id = p.id
-      LEFT JOIN user_permissions up ON up.user = u.id
-      JOIN {$this->table} u ON u.role = rp.role
+      FROM {$this->table} u
+      LEFT JOIN role_permissions rp ON rp.role = u.role
+      LEFT JOIN user_permissions up ON up.user_id = u.id
+      JOIN permissions p ON u.id = rp.permission_id OR p.id = up.permission_id
       WHERE u.id = :user_id
     ";
 
