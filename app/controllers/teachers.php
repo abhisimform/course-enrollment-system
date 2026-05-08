@@ -32,7 +32,7 @@ class Teachers extends BaseController
     $errors = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->validateCsrfOrFail())
+      if ($this->isValidCSRF())
         $errors['csrf_token'] = 'Invalid CSRF token';
 
       $name = trim($_POST['name'] ?? '');
@@ -109,7 +109,7 @@ class Teachers extends BaseController
     $errors = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->validateCsrfOrFail())
+      if ($this->isValidCSRF())
         $errors['csrf_token'] = 'Invalid CSRF token';
 
       $name = trim($_POST['name'] ?? '');
@@ -172,7 +172,7 @@ class Teachers extends BaseController
     return $this->redirect('/teachers');
   }
 
-  public function ajax()
+  public function getTeacherData()
   {
     Rbac::require('teacher.view_all');
 

@@ -26,7 +26,7 @@ class Courses extends BaseController
     $errors = [];
     
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->validateCsrfOrFail())
+      if ($this->isValidCSRF())
         $errors['csrf_token'] = 'Invalid CSRF token';
 
       $course_name    = trim($_POST['course_name'] ?? '');
@@ -95,7 +95,7 @@ class Courses extends BaseController
     $errors = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->validateCsrfOrFail())
+      if ($this->isValidCSRF())
         $errors['csrf_token'] = 'Invalid CSRF token';
 
       $course_name    = trim($_POST['course_name'] ?? '');
@@ -165,7 +165,7 @@ class Courses extends BaseController
     return $this->redirect("/courses");
   }
 
-  public function ajax()
+  public function getCourseData()
   {
     Rbac::require('course.view_all');
 

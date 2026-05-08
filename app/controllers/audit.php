@@ -29,7 +29,7 @@ class Audit extends BaseController
     $this->render('/audit/view', compact('log'));
   }
   
-  public function ajax()
+  public function getAuditData()
   {
     Rbac::require('audit.view_all');
 

@@ -22,7 +22,7 @@
     $('#myAuditTable').DataTable({
       processing: true,
       serverSide: true,
-      ajax: '/audit/ajax',
+      ajax: '/audit/getAuditData',
 
       columns: [{
           data: 'id'

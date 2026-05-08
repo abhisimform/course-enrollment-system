@@ -27,7 +27,7 @@ class Permissions extends BaseController
     $errors = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->validateCsrfOrFail())
+      if ($this->isValidCSRF())
         $errors['csrf_token'] = 'Invalid CSRF token';
 
       $name = trim($_POST['name'] ?? '');
@@ -54,7 +54,7 @@ class Permissions extends BaseController
     $errors = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->validateCsrfOrFail())
+      if ($this->isValidCSRF())
         $errors['csrf_token'] = 'Invalid CSRF token';
 
       $name = trim($_POST['name'] ?? '');
@@ -96,7 +96,7 @@ class Permissions extends BaseController
     $allPermissions = $this->permissionModel->getAll();
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->validateCsrfOrFail())
+      if ($this->isValidCSRF())
         $errors['csrf_token'] = 'Invalid CSRF token';
 
       $role = $_POST['role'] ?? null;
@@ -126,7 +126,7 @@ class Permissions extends BaseController
   public function updateRolePermissions()
   {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->validateCsrfOrFail())
+      if ($this->isValidCSRF())
         $errors['csrf_token'] = 'Invalid CSRF token';
 
       $roles = ['admin', 'teacher', 'student'];
@@ -143,7 +143,7 @@ class Permissions extends BaseController
   public function users()
   {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->validateCsrfOrFail())
+      if ($this->isValidCSRF())
         $errors['csrf_token'] = 'Invalid CSRF token';
 
       $userId = $_POST['user_id'] ?? null;
@@ -207,7 +207,7 @@ class Permissions extends BaseController
   public function updateUserPermissions()
   {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->validateCsrfOrFail())
+      if ($this->isValidCSRF())
         $errors['csrf_token'] = 'Invalid CSRF token';
 
       $userId = $_POST['user_id'] ?? '';
@@ -221,7 +221,7 @@ class Permissions extends BaseController
     }
   }
 
-  public function ajax()
+  public function getPermissionData()
   {
     header('Content-Type: application/json');
 

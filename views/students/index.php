@@ -30,7 +30,7 @@
       search: {
         search: <?= json_encode($_GET['search'] ?? '') ?>
       },
-      ajax: '/students/ajax?<?= http_build_query($_GET) ?>',
+      ajax: '/students/getStudentData?<?= http_build_query($_GET) ?>',
       columns: [{
           data: 'id'
         },

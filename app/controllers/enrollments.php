@@ -22,41 +22,15 @@ class Enrollments extends BaseController
     $user = $_SESSION['user'];
     $role = $user['role'];
 
-    // $filters = $_GET;
-
-    // $limit = (int)($filters['limit'] ?? 10);
-    // $page = (int)($filters['page'] ?? 1);
-    // $offset = ($page - 1) * $limit;
-
-
-    // if ($role === 'admin') {
-    //   Rbac::require('enrollment.view_all');
-
-    //   $enrollments = $this->enrollmentModel->getAll($filters, $limit, $offset);
-    //   $total = $this->enrollmentModel->countAll($filters);
-    // } else {
-    //   $enrollments = $this->enrollmentModel->getByStudent($user['id'], $limit, $offset);
-    //   $total = $this->enrollmentModel->countByStudent($user['id']);
-    // }
-
-    // $totalPages = ceil($total / $limit);
-
     return $this->render('enrollments/index', [
-      // 'enrollments' => $enrollments,
-      // 'filters' => $filters,
-      'role' => $role,
-      // 'pagination' => [
-      //   'page' => $page,
-      //   'totalPages' => $totalPages,
-      //   'limit' => $limit
-      // ]
+      'role' => $role
     ]);
   }
 
   public function enroll()
   {
     Rbac::require('enrollment.create');
-    $this->validateCsrfOrFail();
+    $this->isValidCSRF();
 
     $studentId = $_SESSION['user']['id'];
     $courseId = $_POST['course_id'] ?? '';
@@ -75,7 +49,7 @@ class Enrollments extends BaseController
   {
     Rbac::require('enrollment.cancel');
     
-    $this->validateCsrfOrFail();
+    $this->isValidCSRF();
 
     $id = $_POST['id'] ?? '';
 
@@ -89,7 +63,7 @@ class Enrollments extends BaseController
   public function delete()
   {
     Rbac::require('enrollment.delete');
-    $this->validateCsrfOrFail();
+    $this->isValidCSRF();
 
     $id = $_POST['id'] ?? '';
 
@@ -100,7 +74,7 @@ class Enrollments extends BaseController
     return $this->redirect('/enrollments');
   }
 
-  public function ajax()
+  public function getEnrollmentData()
   {
     Rbac::require('enrollment.view');
 

@@ -32,7 +32,7 @@
       search: {
         search: <?= json_encode($_GET['q'] ?? '') ?>
       },
-      ajax: '/permissions/ajax?<?= http_build_query($_GET) ?>',
+      ajax: '/permissions/getPermissionData?<?= http_build_query($_GET) ?>',
       columns: [{
           data: 'id'
         },

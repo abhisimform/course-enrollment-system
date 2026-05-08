@@ -62,7 +62,7 @@ if (Rbac::has('enrollment.create') && !Rbac::isAdmin()) {
       search: {
         search: <?= json_encode($filters['search'] ?? '') ?>
       },
-      ajax: '/courses/ajax?<?= http_build_query($_GET) ?>',
+      ajax: '/courses/getCourseData?<?= http_build_query($_GET) ?>',
       columns: <?= json_encode($courseColumns) ?>,
       order: [
         [0, 'asc']

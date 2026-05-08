@@ -42,7 +42,7 @@ class Students extends BaseController
     $errors = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->validateCsrfOrFail())
+      if ($this->isValidCSRF())
         $errors['csrf_token'] = 'Invalid CSRF token';
 
       $name = trim($_POST['name'] ?? '');
@@ -127,11 +127,10 @@ class Students extends BaseController
     $errors = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->validateCsrfOrFail())
+      if ($this->isValidCSRF())
         $errors['csrf_token'] = 'Invalid CSRF token';
 
       if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-        dd($_FILES);
         $errors[] = 'File upload failed';
         return $this->render('students/bulk_upload', compact('errors'));
       }
@@ -247,7 +246,7 @@ class Students extends BaseController
     $errors = [];
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->validateCsrfOrFail())
+      if ($this->isValidCSRF())
         $errors['csrf_token'] = 'Invalid CSRF token';
 
       $name = trim($_POST['name'] ?? '');
@@ -300,7 +299,7 @@ class Students extends BaseController
     return $this->redirect("/students");
   }
 
-  public function ajax()
+  public function getStudentData()
   {
     Rbac::require('student.view_all');
 

@@ -153,14 +153,14 @@ function ensureCsrfToken()
   return $_SESSION['csrf_token'];
 }
 
-function csrfToken()
+function newCSRFToken()
 {
   return ensureCsrfToken();
 }
 
 function csrfInput()
 {
-  return '<input type="hidden" name="csrf_token" value="' . e(csrfToken()) . '">';
+  return '<input type="hidden" name="csrf_token" value="' . e(newCSRFToken()) . '">';
 }
 
 function isValidCsrfToken($token)
@@ -169,4 +169,11 @@ function isValidCsrfToken($token)
   $submittedToken = is_string($token) ? $token : '';
 
   return $sessionToken !== '' && $submittedToken !== '' && hash_equals($sessionToken, $submittedToken);
+}
+
+function redirectBack($fallback = '/dashboard')
+{
+  $target = $_SERVER['HTTP_REFERER'] ?? $fallback;
+  header("Location: $target");
+  exit;
 }

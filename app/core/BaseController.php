@@ -5,12 +5,7 @@ class BaseController
 
   protected $layout = 'main';
 
-  protected function ensureCsrf()
-  {
-    ensureCsrfToken();
-  }
-
-  protected function validateCsrfOrFail()
+  protected function isValidCSRF()
   {
     if (!isValidCsrfToken($_POST['csrf_token'] ?? '')) {
       return true;
@@ -22,8 +17,6 @@ class BaseController
 
   protected function render($viewPath, $data = [])
   {
-    $this->ensureCsrf();
-
     extract($data);
 
     $view = BASE_PATH . "/views/" . $viewPath . ".php";

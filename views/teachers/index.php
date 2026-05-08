@@ -29,7 +29,7 @@
       search: {
         search: <?= json_encode($_GET['search'] ?? '') ?>
       },
-      ajax: '/teachers/ajax?<?= http_build_query($_GET) ?>',
+      ajax: '/teachers/getTeacherData?<?= http_build_query($_GET) ?>',
       columns: [{
           data: 'id'
         },
