@@ -120,8 +120,8 @@ class Auth extends BaseController
 
     for ($i = 0; $i < strlen($code); $i++) {
       $y = rand(10, 25);
-      imagestring($image, 2, $x, $y, $code[$i], $text);
-      $x += 22;
+      imagestring($image, 15, $x, $y, $code[$i], $text);
+      $x += 18;
     }
 
     imagepng($image);

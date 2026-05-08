@@ -13,7 +13,6 @@
         <th>Created</th>
       </tr>
     </thead>
-
     <tbody></tbody>
   </table>
 </div>

@@ -33,6 +33,7 @@ $enrollmentColumns = $role === 'admin'
         <th>Actions</th>
       </tr>
     </thead>
+    <tbody></tbody>
   </table>
 </div>
 

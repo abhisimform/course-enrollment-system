@@ -42,6 +42,13 @@
 
 <script>
   $(document).ready(function() {
+
+    $('#captcha').on('input', function() {
+      let cursor = this.selectionStart;
+      this.value = this.value.toUpperCase();
+      this.setSelectionRange(cursor, cursor);
+    });
+
     $('#loginForm').validate({
       errorElement: 'span',
       errorClass: 'error-message',
