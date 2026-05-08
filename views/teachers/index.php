@@ -1,14 +1,5 @@
 <h3>Teachers</h3>
 
-<form method="GET" style="margin-bottom:10px;">
-  <input type="text" name="search" placeholder="Search by name or email" value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
-  <label>
-    <input type="checkbox" name="deleted" value="1" <?= isset($_GET['deleted']) ? 'checked' : '' ?>>
-    Show Deleted
-  </label>
-  <button type="submit">Filter</button>
-</form>
-
 <?php if (Rbac::has('teacher.create') && !isset($_GET['deleted'])): ?>
   <a href="/teachers/create">Add Teacher</a>
 <?php endif; ?>

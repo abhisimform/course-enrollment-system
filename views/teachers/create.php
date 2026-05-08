@@ -1,10 +1,9 @@
 <h2>Add Teacher</h2>
 
-<a href="/teachers">&larr; Back to All Teachers</a>
-<br><br>
+<a href="/teachers" class="btn btn-secondary" style="margin-bottom: 15px; display: inline-block;">&larr; Back to All Teachers</a>
 
 <?php if (!empty($errors)): ?>
-  <div style="color:red;">
+  <div class="error-summary">
     <ul>
       <?php foreach ($errors as $error): ?>
         <li><?= htmlspecialchars($error) ?></li>
@@ -13,19 +12,96 @@
   </div>
 <?php endif; ?>
 
-<form method="POST">
-  <?= csrfInput() ?>
-  <label>Name:</label>
-  <input type="text" name="name" value="<?= htmlspecialchars($_POST['name'] ?? '') ?>" required>
-  <br><br>
+<div class="form-container">
+  <form method="POST" id="addTeacherForm">
+    <?= csrfInput() ?>
 
-  <label>Email:</label>
-  <input type="email" name="email" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required>
-  <br><br>
+    <div class="form-group">
+      <label for="name">Name:</label>
+      <input 
+        type="text" 
+        name="name" 
+        id="name" 
+        placeholder="Name" 
+        value="<?= htmlspecialchars($_POST['name'] ?? '') ?>" 
+        required>
+      <span class="error-message"></span>
+    </div>
 
-  <label>Password:</label>
-  <input type="password" name="password" required>
-  <br><br>
+    <div class="form-group">
+      <label for="email">Email:</label>
+      <input 
+        type="email" 
+        name="email" 
+        id="email" 
+        placeholder="Email" 
+        value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" 
+        required>
+      <span class="error-message"></span>
+    </div>
 
-  <button type="submit">Create Teacher</button>
-</form>
+    <div class="form-group">
+      <label for="password">Password:</label>
+      <input 
+        type="password" 
+        name="password" 
+        id="password" 
+        placeholder="Password" 
+        required>
+      <span class="error-message"></span>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Create Teacher</button>
+    </div>
+  </form>
+</div>
+
+<script>
+$(document).ready(function() {
+  $('#addTeacherForm').validate({
+    errorElement: 'span',
+    errorClass: 'error-message',
+    errorPlacement: function(error, element) {
+      error.appendTo(element.parent());
+    },
+    rules: {
+      name: {
+        required: true,
+        minlength: 3
+      },
+      email: {
+        required: true,
+        email: true
+      },
+      password: {
+        required: true,
+        minlength: 6
+      }
+    },
+    messages: {
+      name: {
+        required: 'Please enter the teacher name',
+        minlength: 'Name must be at least 3 characters'
+      },
+      email: {
+        required: 'Please enter the email',
+        email: 'Please enter a valid email'
+      },
+      password: {
+        required: 'Please enter a password',
+        minlength: 'Password must be at least 6 characters'
+      }
+    },
+    highlight: function(element) {
+      $(element).addClass('is-invalid').removeClass('is-valid');
+    },
+    unhighlight: function(element) {
+      $(element).removeClass('is-invalid').addClass('is-valid');
+    },
+    submitHandler: function(form) {
+      form.submit();
+    }
+  });
+});
+</script>

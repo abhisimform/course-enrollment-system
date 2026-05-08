@@ -47,6 +47,7 @@ if (Rbac::has('enrollment.create') && !Rbac::isAdmin()) {
         <?php endif; ?>
       </tr>
     </thead>
+    <tbody></tbody>
   </table>
 </div>
 

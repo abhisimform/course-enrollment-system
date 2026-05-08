@@ -94,7 +94,7 @@ class Auth extends BaseController
   {
     $characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     $code = '';
-    for ($i = 0; $i < 5; $i++) {
+    for ($i = 0; $i < 6; $i++) {
       $code .= $characters[random_int(0, strlen($characters) - 1)];
     }
     $_SESSION['captcha_code'] = $code;

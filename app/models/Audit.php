@@ -195,10 +195,10 @@ class AuditModel
     $stmt->execute();
 
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+    
     // format data for frontend
     foreach ($rows as &$row) {
-      $row['id'] = "<a href='/audit/view/" . $row['id'] . "'>#" . $row['id'] . "</a>";
+      $row['id'] = '<a href="/audit/view/' . $row['id'] . '">#' . $row['id'] . '</a>';
       $row['old_data'] = $this->formatLogData($row['old_data']);
       $row['new_data'] = $this->formatLogData($row['new_data']);
       $row['changed_at'] = date('d M Y H:i', strtotime($row['changed_at']));

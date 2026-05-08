@@ -1,29 +1,4 @@
-<?php if ($role === 'admin'): ?>
-  <h3>Enrollments</h3>
-
-  <form method="GET" action="/enrollments">
-    <input type="text" name="search" placeholder="Search student or course"
-      value="<?= htmlspecialchars($filters['search'] ?? '') ?>">
-
-    <select name="status">
-      <option value="">All Status</option>
-      <option value="active" <?= ($filters['status'] ?? '') === 'active' ? 'selected' : '' ?>>Active</option>
-      <option value="cancelled" <?= ($filters['status'] ?? '') === 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
-    </select>
-
-    <select name="limit">
-      <?php foreach ([5, 10, 25, 50] as $l): ?>
-        <option value="<?= $l ?>" <?= ($filters['limit'] ?? 10) == $l ? 'selected' : '' ?>>
-          <?= $l ?>
-        </option>
-      <?php endforeach; ?>
-    </select>
-
-    <button type="submit">Filter</button>
-  </form>
-<?php else: ?>
-  <h3>My Enrollments</h3>
-<?php endif; ?>
+<h3>My Enrollments</h3>
 
 <?php
 $enrollmentColumns = $role === 'admin'

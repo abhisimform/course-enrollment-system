@@ -7,12 +7,6 @@
   <a href="/permissions/users">👤 Manage User Permissions</a>
 </div>
 
-<form method="GET" action="/permissions">
-  <label>Search:</label>
-  <input type="text" name="q" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>">
-  <button type="submit">Search</button>
-</form>
-
 <div class="dt-container">
   <table id="permissionsTable" class="display">
     <thead>

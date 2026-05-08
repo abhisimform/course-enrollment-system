@@ -1,14 +1,5 @@
 <h3>Students</h3>
 
-<form method="GET" style="margin-bottom:10px;">
-  <input type="text" name="search" placeholder="Search by name or email" value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
-  <label>
-    <input type="checkbox" name="deleted" value="1" <?= isset($_GET['deleted']) ? 'checked' : '' ?>>
-    Show Deleted
-  </label>
-  <button type="submit">Filter</button>
-</form>
-
 <?php if (Rbac::has('student.create')): ?>
   <a href="/students/create">Add Student</a>
   <a href="/students/bulkupload" style="margin-left:10px;">Bulk Upload</a>
