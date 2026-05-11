@@ -103,7 +103,9 @@ class Teachers extends BaseController
     $teacher = $this->teacherModel->find($id);
 
     if (!$teacher) {
-      die('Teacher not found');
+      setFlash('error', 'Teacher not found');
+
+      return $this->redirect('/students');
     }
 
     $errors = [];
@@ -150,19 +152,37 @@ class Teachers extends BaseController
 
   public function restore()
   {
+    if (!isPOSTRequest()) {
+      return $this->redirect('/teachers');
+    }
+
+    if ($this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+
+      return $this->redirect('/teachers');
+    }
+
     Rbac::require('teacher.restore');
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      $id = $_POST['teacher_id'] ?? null;
-      $this->teacherModel->restore($id);
-      setFlash('success', 'Teacher restored');
-    }
+    $id = $_POST['teacher_id'] ?? null;
+    $this->teacherModel->restore($id);
+    setFlash('success', 'Teacher restored');
 
     return $this->redirect('/teachers?deleted=1');
   }
 
   public function delete($id)
   {
+    if (!isPOSTRequest()) {
+      return $this->redirect('/teachers');
+    }
+
+    if ($this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+
+      return $this->redirect('/teachers');
+    }
+
     Rbac::require('teacher.delete');
 
     $this->teacherModel->softDelete($id);
@@ -197,7 +217,11 @@ class Teachers extends BaseController
 
       if ($showDeleted) {
         if (Rbac::has('teacher.restore')) {
-          $actions[] = '<form method="POST" action="/teachers/restore" class="dt-inline-form">' . csrfInput() . '<input type="hidden" name="teacher_id" value="' . (int)$row['id'] . '"><button type="submit" class="dt-btn">Restore</button></form>';
+          $actions[] = postActionLink(
+            'Restore',
+            '/teachers/restore/' . (int)$row['id'],
+            'Restore teacher?'
+          );
         }
       } else {
         if (Rbac::has('teacher.edit')) {
@@ -205,7 +229,11 @@ class Teachers extends BaseController
         }
 
         if (Rbac::has('teacher.delete')) {
-          $actions[] = '<a href="/teachers/delete/' . (int)$row['id'] . '" onclick="return confirm(\'Delete teacher?\')">Delete</a>';
+          $actions[] = postActionLink(
+            'Delete',
+            '/teachers/delete/' . (int)$row['id'],
+            'Delete teacher?'
+          );
         }
       }
 

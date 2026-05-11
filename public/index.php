@@ -71,4 +71,12 @@ if (!method_exists($controller, $action)) {
   die("Action not found");
 }
 
-$controller->$action($id);
+if ($id !== null) {
+  if (ctype_digit((string)$id) && (int)$id > 0) {
+    $controller->$action($id);
+  } else {
+    die("Invalid ID");
+  }
+} else {
+  $controller->$action();
+}

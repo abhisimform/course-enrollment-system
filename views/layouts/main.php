@@ -376,16 +376,16 @@
       <a href="/students">Students</a>
     <?php endif; ?>
 
+    <?php if (Rbac::has('teacher.view_all')): ?>
+      <a href="/teachers">Teachers</a>
+    <?php endif; ?>
+
     <?php if (Rbac::has('course.view_all')): ?>
       <a href="/courses">Courses</a>
     <?php endif; ?>
 
     <?php if (Rbac::has('enrollment.view')): ?>
       <a href="/enrollments">Enrollments</a>
-    <?php endif; ?>
-
-    <?php if (Rbac::has('teacher.view_all')): ?>
-      <a href="/teachers">Teachers</a>
     <?php endif; ?>
 
     <?php if (Rbac::has('permission.manage')): ?>

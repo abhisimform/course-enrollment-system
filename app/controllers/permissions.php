@@ -38,6 +38,10 @@ class Permissions extends BaseController
         $errors[] = 'Permission name must not exceed 100 characters';
       }
 
+      if ($this->permissionModel->permissionExists($name)) {
+        $errors[] = 'Permission name already exists';
+      }
+
       if (empty($errors)) {
         $this->permissionModel->create($name);
 
@@ -77,6 +81,16 @@ class Permissions extends BaseController
 
   public function delete($id)
   {
+    if (!isPOSTRequest()) {
+      return $this->redirect('/permissions');
+    }
+
+    if ($this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+
+      return $this->redirect('/permissions');
+    }
+
     $this->permissionModel->hardDelete($id);
 
     return $this->redirect('/permissions');
@@ -84,6 +98,16 @@ class Permissions extends BaseController
 
   public function restore($id)
   {
+    if (!isPOSTRequest()) {
+      return $this->redirect('/permissions');
+    }
+
+    if ($this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+
+      return $this->redirect('/permissions');
+    }
+
     $this->permissionModel->restore($id);
 
     return $this->redirect('/permissions');
@@ -241,7 +265,11 @@ class Permissions extends BaseController
     foreach ($rows as &$row) {
       $actions = [];
       $actions[] = '<a href="/permissions/edit/' . (int)$row['id'] . '">Edit</a>';
-      $actions[] = '<a href="/permissions/delete/' . (int)$row['id'] . '" onclick="return confirm(\'Delete this permission?\')">Delete</a>';
+      $actions[] = postActionLink(
+        'Delete',
+        '/permissions/delete/' . (int)$row['id'],
+        'Delete permission?'
+      );
 
       $row['status'] = $row['deleted_at'] ? 'Deleted' : 'Active';
       $row['actions'] = implode(' | ', $actions);

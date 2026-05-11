@@ -4,7 +4,7 @@ require_once BASE_PATH . "/app/models/Course.php";
 
 class Courses extends BaseController
 {
-  private object $courseModel;
+  private $courseModel;
 
   public function __construct()
   {
@@ -24,7 +24,7 @@ class Courses extends BaseController
     Rbac::require('course.create');
 
     $errors = [];
-    
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if ($this->isValidCSRF())
         $errors['csrf_token'] = 'Invalid CSRF token';
@@ -89,7 +89,9 @@ class Courses extends BaseController
     $course = $this->courseModel->find($id);
 
     if (!$course) {
-      die("Course not found");
+      setFlash('error', 'Course not found');
+
+      return $this->redirect('/students');
     }
 
     $errors = [];
@@ -156,6 +158,16 @@ class Courses extends BaseController
 
   public function delete($id)
   {
+    if (!isPOSTRequest()) {
+      return $this->redirect('/courses');
+    }
+
+    if ($this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+
+      return $this->redirect('/courses');
+    }
+
     Rbac::require('course.delete');
 
     $this->courseModel->softDelete($id);
@@ -216,7 +228,11 @@ class Courses extends BaseController
 
       if ($row['deleted_at']) {
         if (Rbac::has('course.restore')) {
-          $manage[] = '<a href="/courses/restore/' . (int)$row['id'] . '">Restore</a>';
+          $row['actions'] = postActionLink(
+            'Restore',
+            '/courses/restore/' . (int)$row['id'],
+            'Restore course?'
+          );
         }
       } else {
         if (Rbac::has('course.edit')) {
@@ -224,14 +240,23 @@ class Courses extends BaseController
         }
 
         if (Rbac::has('course.delete')) {
-          $manage[] = '<a href="/courses/delete/' . (int)$row['id'] . '" onclick="return confirm(\'Delete this course?\')">Delete</a>';
+          $row['actions'] = postActionLink(
+            'Delete',
+            '/courses/delete/' . (int)$row['id'],
+            'Delete course?'
+          );
         }
       }
 
       $enrollment = '';
       if (Rbac::has('enrollment.create') && !Rbac::isAdmin() && !$row['deleted_at']) {
         if (!empty($row['is_enrolled'])) {
-          $enrollment = '<form method="POST" action="/enrollments/cancel" class="dt-inline-form">' . csrfInput() . '<input type="hidden" name="id" value="' . (int)$row['en_id'] . '"><button type="submit" class="dt-btn dt-btn-danger">Cancel</button></form>';
+          // $enrollment = '<form method="POST" action="/enrollments/cancel" class="dt-inline-form">' . csrfInput() . '<input type="hidden" name="id" value="' . (int)$row['en_id'] . '"><button type="submit" class="dt-btn dt-btn-danger">Cancel</button></form>';
+          $enrollment = postActionLink(
+            'Cancel',
+            '/enrollments/cancel/' . (int)$row['en_id'],
+            'Cancel enrollment?'
+          );
         } else {
           $enrollment = '<form method="POST" action="/enrollments/enroll" class="dt-inline-form">' . csrfInput() . '<input type="hidden" name="course_id" value="' . (int)$row['id'] . '"><button type="submit" class="dt-btn">Enroll</button></form>';
         }

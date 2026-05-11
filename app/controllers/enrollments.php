@@ -40,36 +40,46 @@ class Enrollments extends BaseController
       return $this->redirect('/courses');
     }
 
-    $this->enrollmentModel->enroll($studentId, (int)$courseId);
+    $this->enrollmentModel->enroll($studentId, $courseId);
 
     return $this->redirect('/courses');
   }
 
-  public function cancel()
+  public function cancel($id)
   {
-    Rbac::require('enrollment.cancel');
-    
-    $this->isValidCSRF();
-
-    $id = $_POST['id'] ?? '';
-
-    if (ctype_digit((string)$id) && (int)$id > 0) {
-      $this->enrollmentModel->cancel((int)$id);
+    if (!isPOSTRequest()) {
+      return $this->redirect('/enrollments');
     }
+
+    if ($this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+
+      return $this->redirect('/enrollments');
+    }
+
+    Rbac::require('enrollment.cancel');
+
+    // $id = $_POST['id'] ?? '';
+    $this->enrollmentModel->cancel($id);
 
     return $this->redirect('/enrollments');
   }
 
-  public function delete()
+  public function delete($id)
   {
-    Rbac::require('enrollment.delete');
-    $this->isValidCSRF();
-
-    $id = $_POST['id'] ?? '';
-
-    if (ctype_digit((string)$id) && (int)$id > 0) {
-      $this->enrollmentModel->delete((int)$id);
+    if (!isPOSTRequest()) {
+      return $this->redirect('/enrollments');
     }
+
+    if ($this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+
+      return $this->redirect('/enrollments');
+    }
+
+    Rbac::require('enrollment.delete');
+
+    $this->enrollmentModel->delete($id);
 
     return $this->redirect('/enrollments');
   }
@@ -110,7 +120,11 @@ class Enrollments extends BaseController
 
       $row['actions'] = '';
       if (((!$isAdmin) || Rbac::has('enrollment.update')) && strtolower((string)$row['status']) === 'active') {
-        $row['actions'] = '<form method="POST" action="/enrollments/cancel" class="dt-inline-form">' . csrfInput() . '<input type="hidden" name="id" value="' . (int)$row['id'] . '"><button type="submit" class="dt-btn dt-btn-danger">Cancel</button></form>';
+        $row['actions'] = postActionLink(
+          'Cancel',
+          '/enrollments/cancel/' . (int)$row['id'],
+          'Cancel enrollment?'
+        );
       }
     }
 

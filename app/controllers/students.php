@@ -25,16 +25,6 @@ class Students extends BaseController
     return $this->render('students/index');
   }
 
-  public function restore($id)
-  {
-    Rbac::require('student.restore');
-
-    $this->studentModel->restore($id);
-    setFlash('success', 'Student restored');
-
-    return $this->redirect("/students?deleted=1");
-  }
-
   public function create()
   {
     Rbac::require('student.create');
@@ -240,7 +230,9 @@ class Students extends BaseController
     $student = $this->studentModel->find($id);
 
     if (!$student) {
-      die("Student not found");
+      setFlash('error', 'Student Not Found');
+
+      return $this->redirect('/students');
     }
 
     $errors = [];
@@ -288,8 +280,38 @@ class Students extends BaseController
     return $this->render('students/edit', compact('student', 'errors'));
   }
 
+  public function restore($id)
+  {
+    if (!isPOSTRequest()) {
+      return $this->redirect('/students');
+    }
+
+    if ($this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+
+      return $this->redirect('/students');
+    }
+
+    Rbac::require('student.restore');
+
+    $this->studentModel->restore($id);
+    setFlash('success', 'Student restored');
+
+    return $this->redirect("/students?deleted=1");
+  }
+
   public function delete($id)
   {
+    if (!isPOSTRequest()) {
+      return $this->redirect('/students');
+    }
+
+    if ($this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+
+      return $this->redirect('/students');
+    }
+
     Rbac::require('student.delete');
 
     $this->studentModel->softDelete($id);
@@ -324,7 +346,11 @@ class Students extends BaseController
 
       if ($showDeleted) {
         if (Rbac::has('student.restore')) {
-          $actions[] = '<a href="/students/restore/' . (int)$row['id'] . '">Restore</a>';
+          $actions[] = postActionLink(
+            'Restore',
+            '/students/restore/' . (int)$row['id'],
+            'Restore student?'
+          );
         }
       } else {
         if (Rbac::has('student.edit')) {
@@ -332,7 +358,11 @@ class Students extends BaseController
         }
 
         if (Rbac::has('student.delete')) {
-          $actions[] = '<a href="/students/delete/' . (int)$row['id'] . '" onclick="return confirm(\'Delete student?\')">Delete</a>';
+          $actions[] = postActionLink(
+            'Delete',
+            '/students/delete/' . (int)$row['id'],
+            'Delete student?'
+          );
         }
       }
 

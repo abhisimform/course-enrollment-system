@@ -147,7 +147,7 @@ function getFlash()
 function ensureCsrfToken()
 {
   if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex  (random_bytes(32));
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
   }
 
   return $_SESSION['csrf_token'];
@@ -176,4 +176,34 @@ function redirectBack($fallback = '/dashboard')
   $target = $_SERVER['HTTP_REFERER'] ?? $fallback;
   header("Location: $target");
   exit;
+}
+
+function postActionLink($text, $url, $confirm = '')
+{
+  $id = 'f_' . uniqid();
+
+  $html = '<form id="' . $id . '" method="POST" action="' . $url . '" style="display:inline;">';
+  $html .= csrfInput();
+  $html .= '</form>';
+
+  $onclick = '';
+
+  if ($confirm) {
+    $onclick = "if(!confirm('$confirm')) return false;";
+  }
+
+  $onclick .= "document.getElementById('$id').submit(); return false;";
+
+  $html .= '<a href="#" onclick="' . $onclick . '">' . $text . '</a>';
+
+  return $html;
+}
+
+function isPOSTRequest()
+{
+  if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    setFlash('error', 'Invalid request type');
+    return false;
+  }
+  return true;
 }

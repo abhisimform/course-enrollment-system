@@ -9,6 +9,23 @@ require_once BASE_PATH . '/app/models/Audit.php';
 
 class Dashboard extends BaseController
 {
+  private $studentModel;
+  private $courseModel;
+  private $enrollmentModel;
+  private $userModel;
+  private $permissionModel;
+  private $auditModel;
+
+  public function __construct()
+  {
+    $this->studentModel = new StudentModel();
+    $this->courseModel = new CourseModel();
+    $this->enrollmentModel = new EnrollmentModel();
+    $this->userModel = new UserModel();
+    $this->permissionModel = new PermissionModel();
+    $this->auditModel = new AuditModel();
+  }
+
   public function index()
   {
     requireLogin();
@@ -31,29 +48,23 @@ class Dashboard extends BaseController
 
   private function adminDashboard()
   {
-    $studentModel = new StudentModel();
-    $courseModel = new CourseModel();
-    $enrollmentModel = new EnrollmentModel();
-    $userModel = new UserModel();
-    $permissionModel = new PermissionModel();
-    $auditModel = new AuditModel();
 
     return [
       'type' => 'admin',
 
       // core stats
-      'students' => $studentModel->count(),
-      'courses' => $courseModel->count(),
-      'enrollments' => $enrollmentModel->countActive(),
+      'students' => $this->studentModel->count(),
+      'courses' => $this->courseModel->count(),
+      'enrollments' => $this->enrollmentModel->countActive(),
 
       // user stats
-      'users' => $userModel->count(),
-      'teachers' => $userModel->countByRole('teacher'),
-      'inactive_users' => $userModel->countInactive(),
+      'users' => $this->userModel->count(),
+      'teachers' => $this->userModel->countByRole('teacher'),
+      'inactive_users' => $this->userModel->countInactive(),
 
       // system stats
-      'total_permissions' => $permissionModel->count(),
-      'audit_logs' => $auditModel->count()
+      'total_permissions' => $this->permissionModel->count(),
+      'audit_logs' => $this->auditModel->count()
     ];
   }
 

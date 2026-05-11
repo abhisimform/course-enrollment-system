@@ -370,4 +370,19 @@ class PermissionModel
 
     return (int)$stmt->fetchColumn();
   }
+
+  public function permissionExists($name)
+  {
+
+    $stmt = $this->pdo->prepare("
+      SELECT id 
+      FROM {$this->table} 
+      WHERE name = :name 
+      AND deleted_at IS NULL
+      LIMIT 1
+    ");
+
+    $stmt->execute(['name' => $name]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ? true : false;
+  }
 }

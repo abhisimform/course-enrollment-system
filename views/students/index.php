@@ -1,5 +1,12 @@
 <h3>Students</h3>
 
+<?php $flash = getFlash(); ?>
+<?php if ($flash): ?>
+  <div style="background: <?= e($flash['type']) ?>; color:white; padding:10px; margin-bottom: 10px">
+    <?= e($flash['message']) ?>
+  </div>
+<?php endif; ?>
+
 <?php if (Rbac::has('student.create')): ?>
   <a href="/students/create">Add Student</a>
   <a href="/students/bulkupload" style="margin-left:10px;">Bulk Upload</a>
