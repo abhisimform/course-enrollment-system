@@ -33,7 +33,7 @@ class Audit extends BaseController
   {
     Rbac::require('audit.view_all');
 
-    header('Content-Type: application/json');
+    header('Content-Type: application/json; charset=utf-8');
 
     $draw   = (int)($_GET['draw'] ?? 1);
     $start  = (int)($_GET['start'] ?? 0);

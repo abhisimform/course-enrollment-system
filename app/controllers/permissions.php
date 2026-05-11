@@ -7,8 +7,6 @@ class Permissions extends BaseController
 {
   private $permissionModel;
   private $userModel;
-  private $rolePermissionsTable = 'role_permissions';
-  private $userPermissionsTable = 'user_permissions';
 
   public function __construct()
   {
@@ -26,9 +24,10 @@ class Permissions extends BaseController
   {
     $errors = [];
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->isValidCSRF())
+    if (isPOSTRequest()) {
+      if (!$this->isValidCSRF()) {
         $errors['csrf_token'] = 'Invalid CSRF token';
+      }
 
       $name = trim($_POST['name'] ?? '');
 
@@ -57,9 +56,10 @@ class Permissions extends BaseController
     $permission = $this->permissionModel->getById($id);
     $errors = [];
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->isValidCSRF())
+    if (isPOSTRequest()) {
+      if (!$this->isValidCSRF()) {
         $errors['csrf_token'] = 'Invalid CSRF token';
+      }
 
       $name = trim($_POST['name'] ?? '');
 
@@ -82,12 +82,12 @@ class Permissions extends BaseController
   public function delete($id)
   {
     if (!isPOSTRequest()) {
+      setFlash('error', 'Invalid request type');
       return $this->redirect('/permissions');
     }
 
-    if ($this->isValidCSRF()) {
+    if (!$this->isValidCSRF()) {
       setFlash('error', 'Invalid CSRF token');
-
       return $this->redirect('/permissions');
     }
 
@@ -99,12 +99,12 @@ class Permissions extends BaseController
   public function restore($id)
   {
     if (!isPOSTRequest()) {
+      setFlash('error', 'Invalid request type');
       return $this->redirect('/permissions');
     }
 
-    if ($this->isValidCSRF()) {
+    if (!$this->isValidCSRF()) {
       setFlash('error', 'Invalid CSRF token');
-
       return $this->redirect('/permissions');
     }
 
@@ -119,9 +119,10 @@ class Permissions extends BaseController
 
     $allPermissions = $this->permissionModel->getAll();
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->isValidCSRF())
+    if (isPOSTRequest()) {
+      if (!$this->isValidCSRF()) {
         $errors['csrf_token'] = 'Invalid CSRF token';
+      }
 
       $role = $_POST['role'] ?? null;
       $permissionIds = $_POST['permissions'] ?? [];
@@ -149,9 +150,10 @@ class Permissions extends BaseController
 
   public function updateRolePermissions()
   {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->isValidCSRF())
+    if (isPOSTRequest()) {
+      if (!$this->isValidCSRF()) {
         $errors['csrf_token'] = 'Invalid CSRF token';
+      }
 
       $roles = ['admin', 'teacher', 'student'];
 
@@ -166,9 +168,10 @@ class Permissions extends BaseController
 
   public function users()
   {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->isValidCSRF())
+    if (isPOSTRequest()) {
+      if (!$this->isValidCSRF()) {
         $errors['csrf_token'] = 'Invalid CSRF token';
+      }
 
       $userId = $_POST['user_id'] ?? null;
       $permissionIds = $_POST['permissions'] ?? [];
@@ -230,9 +233,10 @@ class Permissions extends BaseController
 
   public function updateUserPermissions()
   {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->isValidCSRF())
+    if (isPOSTRequest()) {
+      if (!$this->isValidCSRF()) {
         $errors['csrf_token'] = 'Invalid CSRF token';
+      }
 
       $userId = $_POST['user_id'] ?? '';
       $permissionIds = $_POST['permissions'] ?? [];
@@ -247,7 +251,7 @@ class Permissions extends BaseController
 
   public function getPermissionData()
   {
-    header('Content-Type: application/json');
+    header('Content-Type: application/json; charset=utf-8');
 
     $draw = (int)($_GET['draw'] ?? 1);
     $start = (int)($_GET['start'] ?? 0);

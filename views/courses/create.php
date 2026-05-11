@@ -4,7 +4,7 @@
   <div class="error-summary">
     <ul>
       <?php foreach ($errors as $error): ?>
-        <li><?= htmlspecialchars($error) ?></li>
+        <li><?= e($error) ?></li>
       <?php endforeach; ?>
     </ul>
   </div>
@@ -21,7 +21,7 @@
         name="course_name"
         id="course_name"
         placeholder="Course Name"
-        value="<?= htmlspecialchars($_POST['course_name'] ?? '') ?>"
+        value="<?= e($_POST['course_name'] ?? '') ?>"
         required>
       <span class="error-message"></span>
     </div>
@@ -32,7 +32,7 @@
         <option value="">Select Instructor</option>
         <?php foreach ($instructors as $instructor): ?>
           <option value="<?= $instructor['id'] ?>" <?= isset($_POST['instructor_id']) && $_POST['instructor_id'] == $instructor['id'] ? 'selected' : '' ?>>
-            <?= htmlspecialchars($instructor['name']) ?>
+            <?= e($instructor['name']) ?>
           </option>
         <?php endforeach; ?>
       </select>
@@ -46,7 +46,7 @@
         name="duration_weeks"
         id="duration_weeks"
         placeholder="Duration in Weeks"
-        value="<?= htmlspecialchars($_POST['duration_weeks'] ?? '') ?>"
+        value="<?= e($_POST['duration_weeks'] ?? '') ?>"
         required>
       <span class="error-message"></span>
     </div>
@@ -58,7 +58,7 @@
         name="max_seats"
         id="max_seats"
         placeholder="Max Seats"
-        value="<?= htmlspecialchars($_POST['max_seats'] ?? '') ?>"
+        value="<?= e($_POST['max_seats'] ?? '') ?>"
         required>
       <span class="error-message"></span>
     </div>

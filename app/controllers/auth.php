@@ -27,10 +27,10 @@ class Auth extends BaseController
 
     $errors = [];
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-      if ($this->isValidCSRF())
+    if (isPOSTRequest()) {
+      if (!$this->isValidCSRF()) {
         $errors['csrf_token'] = 'Invalid CSRF token';
+      }
 
       $email = trim($_POST['email'] ?? '');
       $password = $_POST['password'] ?? '';
@@ -154,9 +154,10 @@ class Auth extends BaseController
 
     $errors = [];
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->isValidCSRF())
+    if (isPOSTRequest()) {
+      if (!$this->isValidCSRF()) {
         $errors['csrf_token'] = 'Invalid CSRF token';
+      }
 
       $formType = $_POST['form_type'] ?? 'profile';
 

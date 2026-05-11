@@ -3,7 +3,7 @@
 <?php $flash = getFlash(); ?>
 <?php if ($flash): ?>
   <div class="flash-message flash-success">
-    <?= htmlspecialchars($flash['message']) ?>
+    <?= e($flash['message']) ?>
   </div>
 <?php endif; ?>
 
@@ -20,7 +20,7 @@
         name="course_name" 
         id="course_name" 
         placeholder="Course Name" 
-        value="<?= htmlspecialchars($course['course_name']) ?>" 
+        value="<?= e($course['course_name']) ?>" 
         required>
       <span class="error-message"></span>
     </div>
@@ -31,7 +31,7 @@
         <option value="">Select Instructor</option>
         <?php foreach ($instructors as $instructor): ?>
           <option value="<?= $instructor['id'] ?>" <?= $course['instructor_id'] == $instructor['id'] ? 'selected' : '' ?>>
-            <?= htmlspecialchars($instructor['name']) ?>
+            <?= e($instructor['name']) ?>
           </option>
         <?php endforeach; ?>
       </select>
@@ -45,7 +45,7 @@
         name="duration_weeks" 
         id="duration_weeks" 
         placeholder="Duration in Weeks" 
-        value="<?= htmlspecialchars($course['duration_weeks']) ?>" 
+        value="<?= e($course['duration_weeks']) ?>" 
         required>
       <span class="error-message"></span>
     </div>
@@ -57,7 +57,7 @@
         name="max_seats" 
         id="max_seats" 
         placeholder="Max Seats" 
-        value="<?= htmlspecialchars($course['max_seats']) ?>" 
+        value="<?= e($course['max_seats']) ?>" 
         required>
       <span class="error-message"></span>
     </div>

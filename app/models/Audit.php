@@ -244,7 +244,7 @@ class AuditModel
     $html = '<ul style="margin:0;padding-left:15px;">';
 
     foreach ($items as $item) {
-      $html .= '<li>' . htmlspecialchars(trim($item)) . '</li>';
+      $html .= '<li>' . e(trim($item)) . '</li>';
     }
 
     $html .= '</ul>';

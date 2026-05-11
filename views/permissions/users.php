@@ -6,7 +6,7 @@
     <option value="">-- Select User --</option>
     <?php foreach ($users as $u): ?>
       <option value="<?= e((int)$u['id']) ?>" <?= ($selectedUser['id'] ?? '') == e((int)$u['id']) ? 'selected' : '' ?>>
-        <?= htmlspecialchars($u['name']) ?>
+        <?= e($u['name']) ?>
       </option>
     <?php endforeach; ?>
   </select>
@@ -16,7 +16,7 @@
 
 <?php if (!empty($selectedUser)): ?>
 
-  <h3>🧑 Selected User: <?= htmlspecialchars($selectedUser['name']) ?></h3>
+  <h3>🧑 Selected User: <?= e($selectedUser['name']) ?></h3>
 
   <form method="POST" action="/permissions/users">
     <?= csrfInput() ?>
@@ -83,7 +83,7 @@
                       value="<?= e((int)$perm['id']) ?>"
                       <?= in_array($perm['id'], $userPermissions ?? []) ? 'checked' : '' ?>>
 
-                    <?= htmlspecialchars($action) ?>
+                    <?= e($action) ?>
 
                   </label>
                 </div>

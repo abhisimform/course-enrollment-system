@@ -92,7 +92,7 @@ $flash = getFlash(); ?>
       <div style="padding:15px; background:#f5f5f5; border-radius:8px; border:1px solid #ddd;">
 
         <h3 style="margin:0 0 10px 0;">
-          <?= htmlspecialchars($enr['course_name']) ?>
+          <?= e($enr['course_name']) ?>
         </h3>
 
         <p style="margin:5px 0;">

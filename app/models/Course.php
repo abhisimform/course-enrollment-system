@@ -98,12 +98,12 @@ class CourseModel
   public function find($id)
   {
     $stmt = $this->pdo->prepare("
-            SELECT * 
-            FROM {$this->table} 
-            WHERE id = :id 
-            AND {$this->baseCondition()}
-            LIMIT 1
-        ");
+      SELECT * 
+      FROM {$this->table} 
+      WHERE id = :id 
+      AND {$this->baseCondition()}
+      LIMIT 1
+    ");
 
     $stmt->execute(['id' => $id]);
     return $stmt->fetch(PDO::FETCH_ASSOC);

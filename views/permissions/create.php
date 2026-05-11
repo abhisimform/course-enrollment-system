@@ -8,7 +8,7 @@
   <div class="error-summary">
     <ul>
       <?php foreach ($errors as $error): ?>
-        <li><?= htmlspecialchars($error) ?></li>
+        <li><?= e($error) ?></li>
       <?php endforeach; ?>
     </ul>
   </div>
@@ -25,7 +25,7 @@
         name="name"
         id="name"
         placeholder="Enter Permission Name"
-        value="<?= htmlspecialchars($_POST['name'] ?? '') ?>"
+        value="<?= e($_POST['name'] ?? '') ?>"
         required>
       <span class="error-message"></span>
     </div>

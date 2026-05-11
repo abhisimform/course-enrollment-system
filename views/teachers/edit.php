@@ -6,7 +6,7 @@
   <div class="error-summary">
     <ul>
       <?php foreach ($errors as $error): ?>
-        <li><?= htmlspecialchars($error) ?></li>
+        <li><?= e($error) ?></li>
       <?php endforeach; ?>
     </ul>
   </div>
@@ -23,7 +23,7 @@
         name="name" 
         id="name" 
         placeholder="Name" 
-        value="<?= htmlspecialchars($_POST['name'] ?? $teacher['name']) ?>" 
+        value="<?= e($_POST['name'] ?? $teacher['name']) ?>" 
         required>
       <span class="error-message"></span>
     </div>
@@ -35,7 +35,7 @@
         name="email" 
         id="email" 
         placeholder="Email" 
-        value="<?= htmlspecialchars($_POST['email'] ?? $teacher['email']) ?>" 
+        value="<?= e($_POST['email'] ?? $teacher['email']) ?>" 
         required>
       <span class="error-message"></span>
     </div>

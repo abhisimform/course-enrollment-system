@@ -7,10 +7,7 @@ class BaseController
 
   protected function isValidCSRF()
   {
-    if (!isValidCsrfToken($_POST['csrf_token'] ?? '')) {
-      return true;
-    }
-    return false;
+    return isValidCsrfToken($_POST['csrf_token'] ?? '');
   }
 
   protected function render($viewPath, $data = [])

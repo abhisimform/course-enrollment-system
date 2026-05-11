@@ -30,7 +30,11 @@ class Enrollments extends BaseController
   public function enroll()
   {
     Rbac::require('enrollment.create');
-    $this->isValidCSRF();
+
+    if (!$this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+      return $this->redirect('/enrollments');
+    }
 
     $studentId = $_SESSION['user']['id'];
     $courseId = $_POST['course_id'] ?? '';
@@ -47,19 +51,18 @@ class Enrollments extends BaseController
 
   public function cancel($id)
   {
-    if (!isPOSTRequest()) {
-      return $this->redirect('/enrollments');
-    }
-
-    if ($this->isValidCSRF()) {
-      setFlash('error', 'Invalid CSRF token');
-
-      return $this->redirect('/enrollments');
-    }
-
     Rbac::require('enrollment.cancel');
 
-    // $id = $_POST['id'] ?? '';
+    if (!isPOSTRequest()) {
+      setFlash('error', 'Invalid request type');
+      return $this->redirect('/enrollments');
+    }
+
+    if (!$this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+      return $this->redirect('/enrollments');
+    }
+
     $this->enrollmentModel->cancel($id);
 
     return $this->redirect('/enrollments');
@@ -67,17 +70,17 @@ class Enrollments extends BaseController
 
   public function delete($id)
   {
-    if (!isPOSTRequest()) {
-      return $this->redirect('/enrollments');
-    }
-
-    if ($this->isValidCSRF()) {
-      setFlash('error', 'Invalid CSRF token');
-
-      return $this->redirect('/enrollments');
-    }
-
     Rbac::require('enrollment.delete');
+
+    if (!isPOSTRequest()) {
+      setFlash('error', 'Invalid request type');
+      return $this->redirect('/enrollments');
+    }
+
+    if (!$this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+      return $this->redirect('/enrollments');
+    }
 
     $this->enrollmentModel->delete($id);
 
@@ -88,7 +91,7 @@ class Enrollments extends BaseController
   {
     Rbac::require('enrollment.view');
 
-    header('Content-Type: application/json');
+    header('Content-Type: application/json; charset=utf-8');
 
     $draw = (int)($_GET['draw'] ?? 1);
     $start = (int)($_GET['start'] ?? 0);
@@ -113,13 +116,15 @@ class Enrollments extends BaseController
     $studentId = $isAdmin ? null : (int)$user['id'];
     $rows = $this->enrollmentModel->getDataTableRecords($start, $length, $search, $orderBy, $orderDir, $filters, $studentId);
 
+    $canUpdate = Rbac::has('enrollment.update');
+
     foreach ($rows as &$row) {
       $row['status_label'] = strtolower((string)$row['status']) === 'active'
         ? '<span class="dt-badge dt-badge-success">Active</span>'
         : '<span class="dt-badge dt-badge-warning">Cancelled</span>';
 
       $row['actions'] = '';
-      if (((!$isAdmin) || Rbac::has('enrollment.update')) && strtolower((string)$row['status']) === 'active') {
+      if (((!$isAdmin) || $canUpdate) && strtolower((string)$row['status']) === 'active') {
         $row['actions'] = postActionLink(
           'Cancel',
           '/enrollments/cancel/' . (int)$row['id'],

@@ -5,7 +5,7 @@
     <div class="error-summary">
       <ul>
         <?php foreach ($errors as $error): ?>
-          <li><?= htmlspecialchars($error) ?></li>
+          <li><?= e($error) ?></li>
         <?php endforeach; ?>
       </ul>
     </div>
@@ -16,7 +16,7 @@
 
     <div class="form-group">
       <label for="email">Email</label>
-      <input type="text" name="email" id="email" placeholder="Email" value="<?= htmlspecialchars($old['email'] ?? '') ?>">
+      <input type="text" name="email" id="email" placeholder="Email" value="<?= e($old['email'] ?? '') ?>">
       <span class="error-message"></span>
     </div>
 

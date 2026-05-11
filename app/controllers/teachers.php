@@ -31,59 +31,55 @@ class Teachers extends BaseController
 
     $errors = [];
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->isValidCSRF())
-        $errors['csrf_token'] = 'Invalid CSRF token';
+    if (isPOSTRequest()) {
 
-      $name = trim($_POST['name'] ?? '');
-      $email = trim($_POST['email'] ?? '');
-      $password = $_POST['password'] ?? '';
-
-      if ($name === '') {
-        $errors['name'] = 'Name is required';
-      } elseif (mb_strlen($name) > 100) {
-        $errors['name'] = 'Name must not exceed 100 characters';
+      if (!$this->isValidCSRF()) {
+        setFlash('error', 'Invalid CSRF token');
+        return $this->redirect('/teachers');
       }
 
-      if ($email === '') {
-        $errors['email'] = 'Email is required';
-      } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors['email'] = 'Invalid email format';
-      } elseif ($this->userModel->emailExists($email)) {
-        $errors['email'] = 'Email already in use';
-      }
+      $data = $this->getTeacherFormData();
 
-      if ($password === '') {
-        $errors['password'] = 'Password is required';
-      } elseif (strlen($password) < 6) {
-        $errors['password'] = 'Password must be at least 6 characters';
-      }
+      $errors = $this->validateTeacherData($data);
 
       if (empty($errors)) {
-        $createdUserId = $this->teacherModel->create([
-          'name' => $name,
-          'email' => $email,
-          'password' => $password
-        ]);
+
+        $createdUserId =
+          $this->teacherModel->create($data);
 
         if ($createdUserId) {
+
           $rolePermissionIds = array_column(
-            $this->permissionModel->getRolePermissions('teacher'),
+            $this->permissionModel
+              ->getRolePermissions('teacher'),
             'id'
           );
 
-          $this->permissionModel->assignToUser((int)$createdUserId, $rolePermissionIds);
-
-          $mailResult = Mailer::sendWelcomeCredentials(
-            ['name' => $name, 'email' => $email],
-            ['role' => 'teacher', 'password' => $password]
+          $this->permissionModel->assignToUser(
+            (int)$createdUserId,
+            $rolePermissionIds
           );
 
+          $mailResult =
+            Mailer::sendWelcomeCredentials(
+              [
+                'name'  => $data['name'],
+                'email' => $data['email']
+              ],
+              [
+                'role'     => 'teacher',
+                'password' => $data['password']
+              ]
+            );
+
           setFlash(
-            $mailResult['sent'] ? 'success' : 'error',
+            $mailResult['sent']
+              ? 'success'
+              : 'error',
             $mailResult['sent']
               ? 'Teacher created and welcome email sent'
-              : 'Teacher created. ' . $mailResult['message']
+              : 'Teacher created. ' .
+              $mailResult['message']
           );
         } else {
           setFlash('error', 'Teacher could not be created');
@@ -104,41 +100,27 @@ class Teachers extends BaseController
 
     if (!$teacher) {
       setFlash('error', 'Teacher not found');
-
-      return $this->redirect('/students');
+      return $this->redirect('/teachers');
     }
 
     $errors = [];
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->isValidCSRF())
-        $errors['csrf_token'] = 'Invalid CSRF token';
+    if (isPOSTRequest()) {
 
-      $name = trim($_POST['name'] ?? '');
-      $email = trim($_POST['email'] ?? '');
-
-      if ($name === '') {
-        $errors['name'] = 'Name is required';
-      } elseif (mb_strlen($name) > 100) {
-        $errors['name'] = 'Name must not exceed 100 characters';
+      if (!$this->isValidCSRF()) {
+        setFlash('error', 'Invalid CSRF token');
+        return $this->redirect('/teachers');
       }
 
-      if ($email === '') {
-        $errors['email'] = 'Email is required';
-      } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors['email'] = 'Invalid email format';
-      } elseif (
-        $email !== $teacher['email'] &&
-        $this->userModel->emailExists($email)
-      ) {
-        $errors['email'] = 'Email already in use';
-      }
+      $data = $this->getTeacherFormData();
+
+      $errors = $this->validateTeacherData($data, $teacher);
 
       if (empty($errors)) {
 
         $this->teacherModel->update($id, [
-          'name' => $name,
-          'email' => $email
+          'name'  => $data['name'],
+          'email' => $data['email']
         ]);
 
         setFlash('success', 'Teacher updated');
@@ -147,22 +129,25 @@ class Teachers extends BaseController
       }
     }
 
-    return $this->render('teachers/edit', compact('teacher', 'errors'));
+    return $this->render(
+      'teachers/edit',
+      compact('teacher', 'errors')
+    );
   }
 
   public function restore()
   {
-    if (!isPOSTRequest()) {
-      return $this->redirect('/teachers');
-    }
-
-    if ($this->isValidCSRF()) {
-      setFlash('error', 'Invalid CSRF token');
-
-      return $this->redirect('/teachers');
-    }
-
     Rbac::require('teacher.restore');
+
+    if (!isPOSTRequest()) {
+      setFlash('error', 'Invalid request type');
+      return $this->redirect('/teachers');
+    }
+
+    if (!$this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+      return $this->redirect('/teachers');
+    }
 
     $id = $_POST['teacher_id'] ?? null;
     $this->teacherModel->restore($id);
@@ -173,17 +158,17 @@ class Teachers extends BaseController
 
   public function delete($id)
   {
-    if (!isPOSTRequest()) {
-      return $this->redirect('/teachers');
-    }
-
-    if ($this->isValidCSRF()) {
-      setFlash('error', 'Invalid CSRF token');
-
-      return $this->redirect('/teachers');
-    }
-
     Rbac::require('teacher.delete');
+
+    if (!isPOSTRequest()) {
+      setFlash('error', 'Invalid request type');
+      return $this->redirect('/teachers');
+    }
+
+    if (!$this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+      return $this->redirect('/teachers');
+    }
 
     $this->teacherModel->softDelete($id);
 
@@ -196,7 +181,7 @@ class Teachers extends BaseController
   {
     Rbac::require('teacher.view_all');
 
-    header('Content-Type: application/json');
+    header('Content-Type: application/json; charset=utf-8');
 
     $draw = (int)($_GET['draw'] ?? 1);
     $start = (int)($_GET['start'] ?? 0);
@@ -212,11 +197,15 @@ class Teachers extends BaseController
 
     $rows = $this->teacherModel->getDataTableRecords($start, $length, $search, $orderBy, $orderDir, $showDeleted);
 
+    $canRestore = Rbac::has('teacher.restore');
+    $caneEdit = Rbac::has('teacher.edit');
+    $canDelete = Rbac::has('teacher.delete');
+
     foreach ($rows as &$row) {
       $actions = [];
 
       if ($showDeleted) {
-        if (Rbac::has('teacher.restore')) {
+        if ($canRestore) {
           $actions[] = postActionLink(
             'Restore',
             '/teachers/restore/' . (int)$row['id'],
@@ -224,11 +213,11 @@ class Teachers extends BaseController
           );
         }
       } else {
-        if (Rbac::has('teacher.edit')) {
+        if ($caneEdit) {
           $actions[] = '<a href="/teachers/edit/' . (int)$row['id'] . '">Edit</a>';
         }
 
-        if (Rbac::has('teacher.delete')) {
+        if ($canDelete) {
           $actions[] = postActionLink(
             'Delete',
             '/teachers/delete/' . (int)$row['id'],
@@ -247,5 +236,51 @@ class Teachers extends BaseController
       'data' => $rows
     ]);
     exit;
+  }
+
+  private function getTeacherFormData()
+  {
+    return [
+      'name'  => trim($_POST['name'] ?? ''),
+      'email' => trim($_POST['email'] ?? ''),
+      'password' => $_POST['password'] ?? '',
+    ];
+  }
+
+  private function validateTeacherData($data, $existingTeacher = null)
+  {
+    $errors = [];
+
+    if ($data['name'] === '') {
+      $errors['name'] = 'Name is required';
+    } elseif (mb_strlen($data['name']) > 100) {
+      $errors['name'] = 'Name must not exceed 100 characters';
+    }
+
+    if ($data['email'] === '') {
+      $errors['email'] = 'Email is required';
+    } elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+      $errors['email'] = 'Invalid email format';
+    } elseif (
+      (
+        !$existingTeacher ||
+        $data['email'] !== $existingTeacher['email']
+      ) &&
+      $this->userModel->emailExists($data['email'])
+    ) {
+      $errors['email'] = 'Email already in use';
+    }
+
+    if (!$existingTeacher) {
+
+      if ($data['password'] === '') {
+        $errors['password'] = 'Password is required';
+      } elseif (strlen($data['password']) < 6) {
+        $errors['password'] =
+          'Password must be at least 6 characters';
+      }
+    }
+
+    return $errors;
   }
 }

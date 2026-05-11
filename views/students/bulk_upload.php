@@ -6,7 +6,7 @@
   <div style="color:red;">
     <ul>
       <?php foreach ($errors as $error): ?>
-        <li><?= htmlspecialchars($error) ?></li>
+        <li><?= e($error) ?></li>
       <?php endforeach; ?>
     </ul>
   </div>

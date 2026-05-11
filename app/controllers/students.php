@@ -25,77 +25,6 @@ class Students extends BaseController
     return $this->render('students/index');
   }
 
-  public function create()
-  {
-    Rbac::require('student.create');
-
-    $errors = [];
-
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->isValidCSRF())
-        $errors['csrf_token'] = 'Invalid CSRF token';
-
-      $name = trim($_POST['name'] ?? '');
-      $email = trim($_POST['email'] ?? '');
-      $password = $_POST['password'] ?? '';
-
-      if ($name === '') {
-        $errors['name'] = 'Name is required';
-      } elseif (mb_strlen($name) > 100) {
-        $errors['name'] = 'Name must not exceed 100 characters';
-      }
-
-      if ($email === '') {
-        $errors['email'] = 'Email is required';
-      } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors['email'] = 'Invalid email';
-      } elseif ($this->userModel->emailExists($email)) {
-        $errors['email'] = 'Email already in use';
-      }
-
-      if ($password === '') {
-        $errors['password'] = 'Password is required';
-      } elseif (strlen($password) < 6) {
-        $errors['password'] = 'Password must be at least 6 characters';
-      }
-
-      if (empty($errors)) {
-        $createdUserId = $this->studentModel->create([
-          'name' => $name,
-          'email' => $email,
-          'password' => $password
-        ]);
-
-        if ($createdUserId) {
-          $rolePermissionIds = array_column(
-            $this->permissionModel->getRolePermissions('student'),
-            'id'
-          );
-
-          $this->permissionModel->assignToUser((int)$createdUserId, $rolePermissionIds);
-
-          $mailResult = Mailer::sendWelcomeCredentials(
-            ['name' => $name, 'email' => $email],
-            ['role' => 'student', 'password' => $password]
-          );
-
-          setFlash(
-            $mailResult['sent'] ? 'success' : 'error',
-            $mailResult['sent']
-              ? 'Student created and welcome email sent'
-              : 'Student created. ' . $mailResult['message']
-          );
-        } else {
-          setFlash('error', 'Student could not be created');
-        }
-
-        return $this->redirect("/students");
-      }
-    }
-
-    return $this->render('students/create', compact('errors'));
-  }
-
   private function parseCsv($filePath)
   {
     $rows = [];
@@ -116,9 +45,10 @@ class Students extends BaseController
 
     $errors = [];
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->isValidCSRF())
+    if (isPOSTRequest()) {
+      if (!$this->isValidCSRF()) {
         $errors['csrf_token'] = 'Invalid CSRF token';
+      }
 
       if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
         $errors[] = 'File upload failed';
@@ -223,6 +153,78 @@ class Students extends BaseController
     return $this->render('students/bulk_upload', compact('errors'));
   }
 
+  public function create()
+  {
+    Rbac::require('student.create');
+
+    $errors = [];
+
+    if (isPOSTRequest()) {
+
+      $data = $this->getStudentFormData();
+
+      $errors = $this->validateStudentData($data);
+
+      if (empty($errors)) {
+
+        $payload = $this->sanitizeStudentData($data);
+
+        $createdUserId =
+          $this->studentModel->create($payload);
+
+        if ($createdUserId) {
+
+          $rolePermissionIds = array_column(
+            $this->permissionModel
+              ->getRolePermissions('student'),
+            'id'
+          );
+
+          $this->permissionModel->assignToUser(
+            (int)$createdUserId,
+            $rolePermissionIds
+          );
+
+          $mailResult =
+            Mailer::sendWelcomeCredentials(
+              [
+                'name'  => $payload['name'],
+                'email' => $payload['email']
+              ],
+              [
+                'role'     => 'student',
+                'password' => $payload['password']
+              ]
+            );
+
+          setFlash(
+            $mailResult['sent']
+              ? 'success'
+              : 'error',
+
+            $mailResult['sent']
+              ? 'Student created and welcome email sent'
+              : 'Student created. ' .
+              $mailResult['message']
+          );
+        } else {
+
+          setFlash(
+            'error',
+            'Student could not be created'
+          );
+        }
+
+        return $this->redirect('/students');
+      }
+    }
+
+    return $this->render(
+      'students/create',
+      compact('errors')
+    );
+  }
+
   public function edit($id)
   {
     Rbac::require('student.edit');
@@ -230,69 +232,52 @@ class Students extends BaseController
     $student = $this->studentModel->find($id);
 
     if (!$student) {
-      setFlash('error', 'Student Not Found');
+
+      setFlash('error', 'Student not found');
 
       return $this->redirect('/students');
     }
 
     $errors = [];
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-      if ($this->isValidCSRF())
-        $errors['csrf_token'] = 'Invalid CSRF token';
+    if (isPOSTRequest()) {
 
-      $name = trim($_POST['name'] ?? '');
-      $email = trim($_POST['email'] ?? '');
-      $password = $_POST['password'] ?? '';
+      $data = $this->getStudentFormData();
 
-      if ($name === '') {
-        $errors['name'] = 'Name is required';
-      } elseif (mb_strlen($name) > 100) {
-        $errors['name'] = 'Name must not exceed 100 characters';
-      }
-
-      if ($email === '') {
-        $errors['email'] = 'Email is required';
-      } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors['email'] = 'Invalid email';
-      } elseif ($email !== $student['email'] && $this->userModel->emailExists($email)) {
-        $errors['email'] = 'Email already in use';
-      }
-
-      if ($password !== '' && strlen($password) < 6) {
-        $errors['password'] = 'Password must be at least 6 characters';
-      }
+      $errors = $this->validateStudentData($data, $student);
 
       if (empty($errors)) {
 
-        $this->studentModel->update($id, [
-          'name' => $name,
-          'email' => $email,
-          'password' => $password
-        ]);
+        $payload = $this->sanitizeStudentData($data);
 
+        $this->studentModel->update($id, $payload);
         setFlash('success', 'Student updated');
 
-        return $this->redirect("/students/edit/$id");
+        return $this->redirect(
+          "/students/edit/$id"
+        );
       }
     }
 
-    return $this->render('students/edit', compact('student', 'errors'));
+    return $this->render(
+      'students/edit',
+      compact('student', 'errors')
+    );
   }
 
   public function restore($id)
   {
-    if (!isPOSTRequest()) {
-      return $this->redirect('/students');
-    }
-
-    if ($this->isValidCSRF()) {
-      setFlash('error', 'Invalid CSRF token');
-
-      return $this->redirect('/students');
-    }
-
     Rbac::require('student.restore');
+
+    if (!isPOSTRequest()) {
+      setFlash('error', 'Invalid request type');
+      return $this->redirect('/students');
+    }
+
+    if (!$this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+      return $this->redirect('/students');
+    }
 
     $this->studentModel->restore($id);
     setFlash('success', 'Student restored');
@@ -302,17 +287,17 @@ class Students extends BaseController
 
   public function delete($id)
   {
-    if (!isPOSTRequest()) {
-      return $this->redirect('/students');
-    }
-
-    if ($this->isValidCSRF()) {
-      setFlash('error', 'Invalid CSRF token');
-
-      return $this->redirect('/students');
-    }
-
     Rbac::require('student.delete');
+
+    if (!isPOSTRequest()) {
+      setFlash('error', 'Invalid request type');
+      return $this->redirect('/students');
+    }
+
+    if (!$this->isValidCSRF()) {
+      setFlash('error', 'Invalid CSRF token');
+      return $this->redirect('/students');
+    }
 
     $this->studentModel->softDelete($id);
 
@@ -325,7 +310,7 @@ class Students extends BaseController
   {
     Rbac::require('student.view_all');
 
-    header('Content-Type: application/json');
+    header('Content-Type: application/json; charset=utf-8');
 
     $draw = (int)($_GET['draw'] ?? 1);
     $start = (int)($_GET['start'] ?? 0);
@@ -341,11 +326,15 @@ class Students extends BaseController
 
     $rows = $this->studentModel->getDataTableRecords($start, $length, $search, $orderBy, $orderDir, $showDeleted);
 
+    $canRestore = Rbac::has('student.restore');
+    $caneEdit = Rbac::has('student.edit');
+    $canDelete = Rbac::has('student.delete');
+
     foreach ($rows as &$row) {
       $actions = [];
 
       if ($showDeleted) {
-        if (Rbac::has('student.restore')) {
+        if ($canRestore) {
           $actions[] = postActionLink(
             'Restore',
             '/students/restore/' . (int)$row['id'],
@@ -353,11 +342,11 @@ class Students extends BaseController
           );
         }
       } else {
-        if (Rbac::has('student.edit')) {
+        if ($caneEdit) {
           $actions[] = '<a href="/students/edit/' . (int)$row['id'] . '">Edit</a>';
         }
 
-        if (Rbac::has('student.delete')) {
+        if ($canDelete) {
           $actions[] = postActionLink(
             'Delete',
             '/students/delete/' . (int)$row['id'],
@@ -376,5 +365,80 @@ class Students extends BaseController
       'data' => $rows
     ]);
     exit;
+  }
+
+  private function sanitizeStudentData($data)
+  {
+    return [
+      'name'     => $data['name'],
+      'email'    => strtolower($data['email']),
+      'password' => $data['password']
+    ];
+  }
+
+  private function getStudentFormData()
+  {
+    return [
+      'name'     => trim($_POST['name'] ?? ''),
+      'email'    => trim($_POST['email'] ?? ''),
+      'password' => trim($_POST['password'] ?? ''),
+    ];
+  }
+
+  private function validateStudentData($data, $existingStudent = null)
+  {
+    $errors = [];
+
+    if (!$this->isValidCSRF()) {
+
+      $errors['csrf_token'] = 'Invalid CSRF token';
+    }
+
+    if ($data['name'] === '') {
+
+      $errors['name'] = 'Name is required';
+    } elseif (mb_strlen($data['name']) > 100) {
+
+      $errors['name'] =
+        'Name must not exceed 100 characters';
+    }
+
+    if ($data['email'] === '') {
+
+      $errors['email'] = 'Email is required';
+    } elseif (
+      !filter_var(
+        $data['email'],
+        FILTER_VALIDATE_EMAIL
+      )
+    ) {
+
+      $errors['email'] = 'Invalid email';
+    } elseif (
+      (
+        !$existingStudent ||
+        $data['email'] !== $existingStudent['email']
+      ) &&
+      $this->userModel->emailExists($data['email'])
+    ) {
+
+      $errors['email'] = 'Email already in use';
+    }
+
+    $isCreate = !$existingStudent;
+
+    if ($isCreate && $data['password'] === '') {
+
+      $errors['password'] = 'Password is required';
+    } elseif (
+      $data['password'] !== '' &&
+      strlen($data['password']) < 6
+    ) {
+
+      $errors['password'] =
+        'Password must be at least 6 characters';
+    }
+
+    return $errors;
   }
 }

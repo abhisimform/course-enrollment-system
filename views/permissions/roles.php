@@ -63,7 +63,7 @@
                     value="<?= $perm['id'] ?>"
                     <?= in_array($perm['id'], $currentPermissions) ? 'checked' : '' ?>>
 
-                  <?= htmlspecialchars($action) ?>
+                  <?= e($action) ?>
 
                 </label>
 

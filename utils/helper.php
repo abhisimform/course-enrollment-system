@@ -73,12 +73,12 @@ function dd(...$vars)
     echo '
         <div class="dd-accordion">
             <div class="dd-header"
-                 onclick="this.nextElementSibling.style.display =
-                 this.nextElementSibling.style.display === \'block\' ? \'none\' : \'block\'">
-                ' . htmlspecialchars($name) . '
+              onclick="this.nextElementSibling.style.display =
+              this.nextElementSibling.style.display === \'block\' ? \'none\' : \'block\'">
+              ' . e($name) . '
             </div>
             <div class="dd-content">
-                <pre>';
+              <pre>';
     print_r($var);
     echo '</pre>
             </div>
@@ -97,15 +97,12 @@ function e($data)
 
 function isLoggedIn()
 {
-  // dd(3, $_SESSION, isset($_SESSION['user']));
   return !empty($_SESSION['user']);
 }
 
 function requireLogin()
 {
-  // dd(2);
   if (!isLoggedIn()) {
-    // dd(1);
     header("Location: /auth/login");
     exit;
   }
@@ -201,9 +198,5 @@ function postActionLink($text, $url, $confirm = '')
 
 function isPOSTRequest()
 {
-  if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    setFlash('error', 'Invalid request type');
-    return false;
-  }
-  return true;
+  return $_SERVER['REQUEST_METHOD'] === 'POST';
 }

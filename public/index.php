@@ -73,7 +73,7 @@ if (!method_exists($controller, $action)) {
 
 if ($id !== null) {
   if (ctype_digit((string)$id) && (int)$id > 0) {
-    $controller->$action($id);
+    $controller->$action((int)$id);
   } else {
     die("Invalid ID");
   }
