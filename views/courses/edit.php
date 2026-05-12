@@ -84,7 +84,7 @@ $(document).ready(function() {
     errorElement: 'span',
     errorClass: 'error-message',
     errorPlacement: function(error, element) {
-      error.appendTo(element.parent()); // show error under the input/select
+      error.appendTo(element.parent());
     },
     rules: {
       course_name: {

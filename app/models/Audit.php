@@ -196,7 +196,6 @@ class AuditModel
 
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // format data for frontend
     foreach ($rows as &$row) {
       $row['id'] = '<a href="/audit/view/' . $row['id'] . '">#' . $row['id'] . '</a>';
       $row['old_data'] = $this->formatLogData($row['old_data']);

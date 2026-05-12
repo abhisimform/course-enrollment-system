@@ -15,27 +15,13 @@ require BASE_PATH . "/app/services/Mailer.php";
 
 session_start();
 
-// dd(ROOT_PATH, BASE_PATH);
-// dd($_SESSION);
-
 $request = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $request = trim($request, '/');
 $parts = $request ? explode('/', $request) : [];
 
-// dd($request, $parts);
-
-/*
-URL structure:
-0 => module
-1 => action
-2 => id (optional)
-*/
-
 $module = $parts[0] ?? 'auth';
 $action = $parts[1] ?? 'index';
 $id     = $parts[2] ?? null;
-
-// dd($module, $action, $id);
 
 $file = "../app/controllers/{$module}.php";
 
@@ -58,14 +44,6 @@ if (!class_exists($class)) {
 }
 
 $controller = new $class();
-
-// dd($controller,isLoggedIn(), requireLogin());
-
-/*
-Call method dynamically
-students/list → Student::list()
-students/view/1 → Student::view(1)
-*/
 
 if (!method_exists($controller, $action)) {
   die("Action not found");

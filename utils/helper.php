@@ -10,15 +10,11 @@ function dd(...$vars)
     strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false
   );
 
-  // Get variable names from calling line
   $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
   $line = file($backtrace[0]['file'])[$backtrace[0]['line'] - 1] ?? '';
   preg_match('/dd\((.+)\)/', $line, $matches);
   $names = isset($matches[1]) ? explode(',', $matches[1]) : [];
 
-  // =========================
-  // AJAX / API RESPONSE
-  // =========================
   if ($isAjax) {
     header('Content-Type: application/json');
 
@@ -36,9 +32,6 @@ function dd(...$vars)
     die();
   }
 
-  // =========================
-  // NORMAL HTML RESPONSE
-  // =========================
   echo '
     <style>
       .dd-container {

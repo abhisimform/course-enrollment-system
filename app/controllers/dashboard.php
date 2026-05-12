@@ -52,17 +52,14 @@ class Dashboard extends BaseController
     return [
       'type' => 'admin',
 
-      // core stats
       'students' => $this->studentModel->count(),
       'courses' => $this->courseModel->count(),
       'enrollments' => $this->enrollmentModel->countActive(),
 
-      // user stats
       'users' => $this->userModel->count(),
       'teachers' => $this->userModel->countByRole('teacher'),
       'inactive_users' => $this->userModel->countInactive(),
 
-      // system stats
       'total_permissions' => $this->permissionModel->count(),
       'audit_logs' => $this->auditModel->count()
     ];
