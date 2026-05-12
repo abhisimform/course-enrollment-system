@@ -1,0 +1,11 @@
+.env
+.vscode
+.*
+
+logs/
+config/*.sql
+
+views/notifications
+views/emails
+
+PHPMailer-master
